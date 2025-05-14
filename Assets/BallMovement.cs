@@ -4,10 +4,10 @@ public class BallMovement : MonoBehaviour
 {
     Rigidbody rb;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    [SerializeField] private float linearDampingValue = 0.2f; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
-    [SerializeField] private float angularDampingValue = 0.02f; // 回転空気抵抗（摩擦）
-    [SerializeField] private float massValue = 0.0027f; // 卓球ボールの重さ（kg）
-    [SerializeField] private float magnusForceScale = 0.003f; // マグナス力のスケーリング（適当な試行値、0.001〜0.01くらい）
+    private float linearDampingValue = 0f; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
+    private float angularDampingValue = 0f; // 回転空気抵抗（摩擦）
+    private float massValue = 0.0027f; // 卓球ボールの重さ（kg）
+    private float magnusForceScale = 0.001f; // マグナス力のスケーリング（適当な試行値、0.001〜0.01くらい）
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -25,7 +25,7 @@ public class BallMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        ApplyMagnusEffect();
+        //ApplyMagnusEffect();
     }
 
     // Update is called once per frame

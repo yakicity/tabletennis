@@ -634,14 +634,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9f384f3549524fb0950e0f271bed992, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 3
-  adjustDistance: 2
-  ball: {fileID: 1263390016}
-  normalRotationVector: {x: -90, y: -90, z: 180}
-  cutRotationVector: {x: -50, y: -90, z: 180}
-  racketVelocityAtCollision: {x: 4, y: 0, z: 0}
-  reflectScale: 0.3
-  racketImpactScale: 1.5
 --- !u!65 &1139492574
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -680,10 +672,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a42f83e14ad447428f2bcc4604af8f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearDampingValue: 0.47
-  angularDampingValue: 0.05
-  massValue: 0.0027
-  magnusForceScale: 0.003
 --- !u!1001 &1513864014
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -694,7 +682,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1291743089180749402, guid: 5fecca7fcae2d06439e097fb18e80a25, type: 3}
       propertyPath: m_Drag
-      value: 0.47
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1291743089180749402, guid: 5fecca7fcae2d06439e097fb18e80a25, type: 3}
       propertyPath: m_Mass
@@ -702,6 +690,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1291743089180749402, guid: 5fecca7fcae2d06439e097fb18e80a25, type: 3}
       propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1291743089180749402, guid: 5fecca7fcae2d06439e097fb18e80a25, type: 3}
+      propertyPath: m_AngularDrag
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1291743089180749402, guid: 5fecca7fcae2d06439e097fb18e80a25, type: 3}

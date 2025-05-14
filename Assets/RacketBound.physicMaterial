@@ -8,8 +8,8 @@ PhysicsMaterial:
   m_PrefabAsset: {fileID: 0}
   m_Name: RacketBound
   serializedVersion: 2
-  m_DynamicFriction: 0.2
-  m_StaticFriction: 0.2
+  m_DynamicFriction: 0.1
+  m_StaticFriction: 0.1
   m_Bounciness: 1
-  m_FrictionCombine: 2
+  m_FrictionCombine: 3
   m_BounceCombine: 3
