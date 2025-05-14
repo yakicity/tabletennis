@@ -640,6 +640,8 @@ MonoBehaviour:
   normalRotationVector: {x: -90, y: -90, z: 180}
   cutRotationVector: {x: -50, y: -90, z: 180}
   racketVelocityAtCollision: {x: 4, y: 0, z: 0}
+  reflectScale: 0.3
+  racketImpactScale: 1.5
 --- !u!65 &1139492574
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -681,6 +683,7 @@ MonoBehaviour:
   linearDampingValue: 0.47
   angularDampingValue: 0.05
   massValue: 0.0027
+  magnusForceScale: 0.003
 --- !u!1001 &1513864014
 PrefabInstance:
   m_ObjectHideFlags: 0
