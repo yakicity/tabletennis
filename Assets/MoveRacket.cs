@@ -24,11 +24,18 @@ public class MoveRacket : MonoBehaviour
     private Quaternion rightRotation;     // 右向きのラケット
 
     private Quaternion leftRotation;     // 左向きラケット
-
     // 衝突時
     private Vector3 racketVelocityAtCollision = new Vector3(3f, 0f, 0f); // 衝突時のラケットの速度
     private float reflectScale = 0.4f; // 反射の強さ
     private float racketImpactScale = 1.0f; // ラケットの勢いで押し出す強さ
+
+    // 衝突(離散)
+    private Vector3 returnDirectionNormal = new Vector3(-0.3f, 0.2f, 0.0f).normalized;
+    private Vector3 returnDirectionDrive = new Vector3(-0.3f, 0.2f, 0.0f).normalized;
+    private Vector3 returnDirectionCut = new Vector3(-0.3f, 0.2f, 0.0f).normalized;
+    private Vector3 returnDirectionRight = new Vector3(-0.3f, 0.2f, 0.2f).normalized;
+    private Vector3 returnDirectionLeft = new Vector3(-0.3f, 0.2f, -0.2f).normalized;
+    private float returnSpeed = 3f;
 
     private Vector3 moveInput = Vector3.zero;
     Rigidbody rb;
@@ -40,8 +47,8 @@ public class MoveRacket : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-
         initialPosition = transform.position;
+        // rb.isKinematic =true; // ラケットの物理演算を無効にする
 
         normalRotation = Quaternion.Euler(normalRotationVector);
         driveRotation = Quaternion.Euler(driveRotationVector);
@@ -69,7 +76,8 @@ public class MoveRacket : MonoBehaviour
         // キー入力がある時だけ速度を与え、ない時は止める
         rb.linearVelocity = moveInput * moveSpeed;
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
-        UpdateRotation();   // ラケットの向きを更新
+        // UpdateRotation();   // ラケットの向きを更新
+        UpdateRotationDiscrete(); // ラケットの向きを更新
 
     }
     void HandleInput()
@@ -89,6 +97,15 @@ public class MoveRacket : MonoBehaviour
         if (Input.GetKey(KeyCode.RightArrow)) transform.rotation *= Quaternion.Euler(0f, 0f, 5f);
         if (Input.GetKey(KeyCode.LeftArrow)) transform.rotation *= Quaternion.Euler(0f, 0f, -5f);
         if (Input.GetKey(KeyCode.C)) transform.rotation = normalRotation;
+    }
+
+    void UpdateRotationDiscrete()
+    {
+        if (Input.GetKey(KeyCode.UpArrow)) transform.rotation = driveRotation;
+        else if (Input.GetKey(KeyCode.DownArrow)) transform.rotation = cutRotation;
+        else if (Input.GetKey(KeyCode.RightArrow)) transform.rotation = rightRotation;
+        else if (Input.GetKey(KeyCode.LeftArrow)) transform.rotation = leftRotation;
+        else transform.rotation = normalRotation;
     }
 
     void AdjustPositionToBall(float targetX)
@@ -114,7 +131,7 @@ public class MoveRacket : MonoBehaviour
     {
         if (points == null || lineRenderer == null)
             return;
-        
+
         if (ballToPlayer){
             lineRenderer.positionCount = points.Count;
             lineRenderer.SetPositions(points.ToArray());
@@ -124,26 +141,55 @@ public class MoveRacket : MonoBehaviour
             lineRenderer.enabled = false;
     }
 
-    void OnCollisionEnter(Collision collision)
+    // return directionを決定する
+    Vector3 checkReturnDirection()
+    {
+        if (transform.rotation == cutRotation)
+        {
+            return returnDirectionCut;
+        }
+        else if (transform.rotation == driveRotation)
+        {
+            return returnDirectionDrive;
+        }
+        else if (transform.rotation == rightRotation)
+        {
+            return returnDirectionRight;
+        }
+        else if (transform.rotation == leftRotation)
+        {
+            return returnDirectionLeft;
+        }
+        else
+        {
+            return returnDirectionNormal;
+        }
+    }
+
+    // void OnCollisionEnter(Collision collision)
+    void OnTriggerEnter(Collider collision)
     {
         if (collision.gameObject.CompareTag("Ball"))
         {
-
             if (ballRb != null)
             {
-                Vector3 racketVelocity = rb.linearVelocity; // ラケットの動き
-                Vector3 normal = collision.contacts[0].normal; // 接触面の法線
-                Debug.Log(normal);
-                Vector3 incomingVelocity = ballRb.linearVelocity;   // ボールの動き
+                // Vector3 racketVelocity = rb.linearVelocity; // ラケットの動き
+                // Vector3 normal = collision.contacts[0].normal; // 接触面の法線
+                // Debug.Log(normal);
+                // Vector3 incomingVelocity = ballRb.linearVelocity;   // ボールの動き
 
-                // 「ラケットの速度方向」と「法線」の加味
-                Vector3 finalVelocity = Vector3.Reflect(incomingVelocity, -normal) * reflectScale// 物理的反射
-                                                                                                 // + racketVelocity * 2f; // ラケットの勢いで押し出す
-                                    + racketVelocityAtCollision * racketImpactScale; // 衝突時ラケットの勢い(固定)で押し出す
-                // Debug.Log(finalVelocity);
+                // // 「ラケットの速度方向」と「法線」の加味
+                // Vector3 finalVelocity = Vector3.Reflect(incomingVelocity, -normal) * reflectScale// 物理的反射
+                //                                                                                  // + racketVelocity * 2f; // ラケットの勢いで押し出す
+                //                     + racketVelocityAtCollision * racketImpactScale; // 衝突時ラケットの勢い(固定)で押し出す
+                // // Debug.Log(finalVelocity);
 
-                ballRb.linearVelocity = finalVelocity;
-                // Debug.Log(racketVelocity);
+                // ballRb.linearVelocity = finalVelocity;
+                // // Debug.Log(racketVelocity);
+
+                Vector3 returnDirection = checkReturnDirection();
+                ballRb.linearVelocity = returnDirection * returnSpeed; // 速さを与えて山なりにボールを返す
+
 
                 if (ballMovement != null)
                 {
