@@ -3,18 +3,20 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 
 using UnityEngine;
+using UnityEngine.InputSystem.iOS;
 using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 public class MoveRacket : MonoBehaviour
 {
-    private float moveSpeed = 3.5f;    // ラケットの移動速度
+    private float moveSpeed = 3.0f;    // ラケットの移動速度
     private GameObject ball;
 
     private Vector3 initialPosition;
 
     private Vector3 normalRotationVector = new Vector3(-90f, -90f, 180f); // 通常のラケットの向き
-    private Vector3 driveRotationVector = new Vector3(-110f, -90f, 180f); // 少し上向きに傾ける
-    private Vector3 cutRotationVector = new Vector3(-50f, -90f, 180f); // 少し下向きに傾ける
+    private Vector3 driveRotationVector = new Vector3(-100f, -90f, 180f); // 少し下向きに傾ける
+    private Vector3 cutRotationVector = new Vector3(-70f, -90f, 180f); // 少し上向きに傾ける
     private Vector3 rightRotationVector = new Vector3(-90f, -90f, 210f); // 少し右向きに傾ける
     private Vector3 leftRotationVector = new Vector3(-90f, -90f, 150f); // 少し左向きに傾ける
     private Quaternion normalRotation;  // 通常のラケットの向き
@@ -36,12 +38,21 @@ public class MoveRacket : MonoBehaviour
     private Vector3 returnDirectionRight = new Vector3(-0.3f, 0.2f, 0.2f).normalized;
     private Vector3 returnDirectionLeft = new Vector3(-0.3f, 0.2f, -0.2f).normalized;
     private float returnSpeed = 3f;
+    private float lastTapTime = 0f;
+    private bool isDoubleTap = false;
+    private float doubleTapThreshold = 0.2f;
+    private float pressStartTime = 0f;
+    private bool isHolding = false;
+    private float holdDuration = 0f;
+    private float boostSpeed;
+    private float timeScale;
 
     private Vector3 moveInput = Vector3.zero;
     Rigidbody rb;
     Rigidbody ballRb;
     BallMovement ballMovement;
     LineRenderer lineRenderer;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -64,6 +75,8 @@ public class MoveRacket : MonoBehaviour
         ballRb = ball.GetComponent<Rigidbody>();
         ballMovement = ball.GetComponent<BallMovement>();
         lineRenderer = ball.GetComponent<LineRenderer>();
+        
+        timeScale = Time.timeScale;
     }
 
     // Update is called once per frame
@@ -77,16 +90,64 @@ public class MoveRacket : MonoBehaviour
         rb.linearVelocity = moveInput * moveSpeed;
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
         // UpdateRotation();   // ラケットの向きを更新
-        UpdateRotationDiscrete(); // ラケットの向きを更新
+        UpdateRotationDiscrete(); // ラケットの向きを離散的に更新
 
     }
     void HandleInput()
     {
         moveInput = Vector3.zero;
-        if (Input.GetKey(KeyCode.A)) moveInput.z += 1;
-        if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
-        if (Input.GetKey(KeyCode.W)) moveInput.x += 1;
-        if (Input.GetKey(KeyCode.S)) moveInput.x -= 1;
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            float now = Time.time;
+            Debug.Log(Time.time);
+
+            // ダブルタップ判定
+            if (lastTapTime > 0f && (now - lastTapTime)  / timeScale <= doubleTapThreshold)
+            {
+                isDoubleTap = true;
+                Debug.Log("Double Tap Detected!");
+            }
+            else
+            {
+                isDoubleTap = false;
+            }
+
+            lastTapTime = now;
+
+            // 押し始め時間記録
+            pressStartTime = now;
+            isHolding = true;
+        }
+        // --- 離した時 ---
+        if (Input.GetKeyUp(KeyCode.C))
+        {
+            if (isHolding)
+            {
+                holdDuration = Time.time - pressStartTime;
+                Debug.Log($"W Hold Duration: {holdDuration}");
+
+                if (isDoubleTap)
+                {
+                    boostSpeed = Mathf.Clamp(holdDuration * 5f, 1f, 10f);
+                    rb.linearVelocity = new Vector3(boostSpeed, rb.linearVelocity.y, rb.linearVelocity.z);
+                    Debug.Log($"Boost Applied: {boostSpeed}");
+                }
+            }
+            isDoubleTap = false;
+            isHolding = false;
+        }
+        if (!isDoubleTap) // ため中は完全停止！
+        {
+            if (Input.GetKey(KeyCode.W)) moveInput.x += 1;
+            if (Input.GetKey(KeyCode.S)) moveInput.x -= 1;
+            if (Input.GetKey(KeyCode.A)) moveInput.z += 1;
+            if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
+        }
+        // else
+        // {
+        //     // ため中は Debug 表示（確認用）
+        //     Debug.Log("In Double Tap (Charging), movement disabled.");
+        // }
     }
     // ラケットの向きを更新
     // カットスピンの時はラケットを少し下向きに傾ける
@@ -141,70 +202,8 @@ public class MoveRacket : MonoBehaviour
             lineRenderer.enabled = false;
     }
 
-    // return directionを決定する
-    Vector3 checkReturnDirection()
-    {
-        if (transform.rotation == cutRotation)
-        {
-            return returnDirectionCut;
-        }
-        else if (transform.rotation == driveRotation)
-        {
-            return returnDirectionDrive;
-        }
-        else if (transform.rotation == rightRotation)
-        {
-            return returnDirectionRight;
-        }
-        else if (transform.rotation == leftRotation)
-        {
-            return returnDirectionLeft;
-        }
-        else
-        {
-            return returnDirectionNormal;
-        }
-    }
-
-    // void OnCollisionEnter(Collision collision)
-    void OnTriggerEnter(Collider collision)
-    {
-        if (collision.gameObject.CompareTag("Ball"))
-        {
-            if (ballRb != null)
-            {
-                // Vector3 racketVelocity = rb.linearVelocity; // ラケットの動き
-                // Vector3 normal = collision.contacts[0].normal; // 接触面の法線
-                // Debug.Log(normal);
-                // Vector3 incomingVelocity = ballRb.linearVelocity;   // ボールの動き
-
-                // // 「ラケットの速度方向」と「法線」の加味
-                // Vector3 finalVelocity = Vector3.Reflect(incomingVelocity, -normal) * reflectScale// 物理的反射
-                //                                                                                  // + racketVelocity * 2f; // ラケットの勢いで押し出す
-                //                     + racketVelocityAtCollision * racketImpactScale; // 衝突時ラケットの勢い(固定)で押し出す
-                // // Debug.Log(finalVelocity);
-
-                // ballRb.linearVelocity = finalVelocity;
-                // // Debug.Log(racketVelocity);
-
-                Vector3 returnDirection = checkReturnDirection();
-                ballRb.linearVelocity = returnDirection * returnSpeed; // 速さを与えて山なりにボールを返す
-
-
-                if (ballMovement != null)
-                {
-                    if (transform.rotation == cutRotation)
-                    {
-                        Debug.Log("カットスピンの条件: ");
-                        // ballMovement.ApplyCutSpin();
-                    }
-                    else
-                    {
-                        Debug.Log("ドライブ: ");
-                        // ballMovement.ApplyDriveSpin();
-                    }
-                }
-            }
-        }
+    void OnCollisionEnter(Collision collision){
+        // ballMovement.ApplyDriveSpin();
+        // ballMovement.ApplyCutSpin();
     }
 }
