@@ -9,8 +9,6 @@ public class EnemyMoveRacket : MonoBehaviour
     private Rigidbody rb;
     private Rigidbody ballRb;
 
-    private Vector3 returnDirection = new Vector3(-0.3f, 0.2f, 0.0f).normalized;
-    private float returnSpeed = 5f;
     private BallMovement ballMovement;
 
 
