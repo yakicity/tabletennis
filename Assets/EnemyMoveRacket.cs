@@ -5,10 +5,9 @@ using UnityEngine.InputSystem;
 
 public class EnemyMoveRacket : MonoBehaviour
 {
-    private GameObject ball;
     private Rigidbody rb;
+    private GameObject ball;
     private Rigidbody ballRb;
-
     private BallMovement ballMovement;
 
 
@@ -26,13 +25,15 @@ public class EnemyMoveRacket : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update() { }
+    void Update() 
+    { 
+
+    }
 
     void FixedUpdate()
     {
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
     }
-
 
     void AdjustPositionToBall(float targetX)
     {

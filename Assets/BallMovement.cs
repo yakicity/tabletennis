@@ -25,13 +25,15 @@ public class BallMovement : MonoBehaviour
     * ボールの回転や飛ぶ方向に関するパラメータ
     */
     private const float RubberPower = 20f; // ラバーによる回転量の増加率
-    private const float NormalTuningVelocityY = 1.0f; // ボールがネットより高い時のY方向速度調整
+    private const float NormalTuningVelocityY =1.0f; // ボールがネットより高い時のY方向速度調整
     private const float LoopTuningVelocityY = 6f; // ボールがネットより低い時のY方向速度調整
-    private const float TuningVelocityX = 1.5f; // ボールのX方向速度の調整
+    private const float NormalTuningVelocityX = 1.6f; // ボールがネットより高い時のX方向速度の調整
+    private const float LoopTuningVelocityX = 1.4f; // ボールがネットより低い時のX方向速度の調整
     private const float TunignAngle = 1.0f; // ラケット傾きによる飛距離補正
     private const float NetHeight = 0.94f; // ネットの高さ （Y座標）
-    private float targetHeight = NetHeight + 0.2f; // ボールが狙う高さ (ネットより少し高め)
-    private const float RacketMinSpeed = 2.5f; // ラケットの最低限の速さ
+    private float targetHeight = NetHeight + 0.3f; // ボールが狙う高さ (ネットより少し高め)
+    private const float RacketMinSpeed = 2.0f; // ラケットの最低限の速さ
+    private const float SpinDecreaseRate = 0.8f;
 
 
     /**
@@ -85,32 +87,35 @@ public class BallMovement : MonoBehaviour
         rb.AddForce(magnusForce, ForceMode.Force);
     }
 
-    // ボールの回転による「ずれ」を適用する処理
+    // ボールの回転・ヒット時の速度補正を適用する
     void HandleBatCollision(Collision collision)
     {
-        Vector3 spin = rb.angularVelocity; // 現在のボールの回転
-        Vector3 normal = collision.contacts[0].normal; // 接触点の砲戦
+        Vector3 currentSpin = rb.angularVelocity; // 現在のボールのスピン
+        Vector3 generatedSpin = CalculateGeneratedSpin(collision); // ラケットの傾きと速度によって生成されるスピン
+        Vector3 finalSpin; // 最終的なスピン
+        Vector3 spinEffect = Vector3.zero;
+        Debug.Log($"currentSpin: {currentSpin}, generateSpin: {generatedSpin}");
 
-        // 回転によル上下方向の力 (ずれる方向)
-        Vector3 spinDir = Vector3.Cross(spin, normal).normalized; // ずれる方向の単位ベクトル
-        float spinMagnitude = spin.magnitude; // 回転量の大きさ
-        Vector3 horizontalForce = spinDir * spinMagnitude; // 実際に適用する力ベクトル
+        // スピン比較：生成スピンが強ければ上書き、弱ければ合成＋ズレ補正
+        if (Mathf.Abs(generatedSpin.z) > Mathf.Abs(currentSpin.z * SpinDecreaseRate))
+            finalSpin = generatedSpin; 
+        else {
+            finalSpin = generatedSpin + currentSpin; 
+            spinEffect = CalculateSpinEffect(collision, finalSpin);
+            Debug.Log($"finalSpin: {finalSpin}, spinEffect: {spinEffect}");
+        }
 
-        // TODO: ラケットの動きによるボールの速さ
-        // Vector3 racketImpact = Vector3.Project(racketRb.linearVelocity, normal); // ラケットの動きによりボールがずれる方向
-        // Debug.Log($"racketImpact: {racketImpact}");
+        // ラケットの速さと傾きによる速度補正を計算する
+        Vector3 hitVelocity = CalculateHitVelocity(collision);
+        Debug.Log($"hitVelocity: {hitVelocity}");
 
-
-        // 回転によるずれをボールの速度に加算
-        rb.linearVelocity += horizontalForce;
-        // rb.linearVelocity = horizontalForce + racketImpact;
-
-        Debug.Log($"spin: {spin}, normal: {normal}, spinDir: {spinDir}, SpinMagnitude: {spinMagnitude},horizontalForce: {horizontalForce} rb.LinearVelocity: {rb.linearVelocity}");
+        // ボールに最終的な速度とスピンを適用
+        rb.linearVelocity = spinEffect + hitVelocity;
+        rb.angularVelocity = finalSpin;
+        Debug.Log($"rb.linearVelocity: {rb.linearVelocity}, rb.angularVelocity: {rb.angularVelocity}");
     }
-
-    // ラケットの擦りによってボールに回転を与える処理
-    void HandleBatSpinCollision(Collision collision)
-    {
+    // ラケットの傾きと動かす速さによって生成される, 回転速度を計算する
+    Vector3 CalculateGeneratedSpin(Collision collision){
         Vector3 normal = collision.contacts[0].normal;
         GameObject racket = collision.gameObject;
         Rigidbody racketRb = racket.GetComponent<Rigidbody>();
@@ -123,19 +128,30 @@ public class BallMovement : MonoBehaviour
         // 回転の強さ = 接線速度の大きさ × スピン係数
         float spinAmount = tangentialVel.magnitude * RubberPower;
         // 回転をZ軸 (上下回転)にだけ反映
-        rb.angularVelocity = new Vector3(rb.angularVelocity.x,rb.angularVelocity.y, spinDir.z * spinAmount);
-
-        Debug.Log($"[Spin] tangentialVel: {tangentialVel}, spinDir: {spinDir}, spinAmount: {spinAmount}, rb.angularVelocity: {rb.angularVelocity}");
+        return new Vector3(rb.angularVelocity.x, rb.angularVelocity.y, spinDir.z * spinAmount);
     }
-    void AdjustTrajectory(Collision collision)
+
+    // ボールの回転によってずれる方向を計算する
+    Vector3 CalculateSpinEffect(Collision collision, Vector3 spin){
+        // 接触点の法線
+        Vector3 normal = collision.contacts[0].normal; 
+        // ずれる方向の単位ベクトル
+        Vector3 spinDir = Vector3.Cross(spin, normal).normalized; 
+        // 回転量の大きさ
+        float spinMagnitude = spin.magnitude; 
+        // 実際に適用するベクトル
+        return spinDir * spinMagnitude; 
+    }
+    Vector3 CalculateHitVelocity(Collision collision)
     {
         GameObject racket = collision.gameObject;
         Rigidbody racketRb = racket.GetComponent<Rigidbody>();
 
         // Y方向速度 (ネットとの位置関係から決定)
         float ballHeight = gameObject.transform.position.y;
-        float yDifference = targetHeight - ballHeight; // 現在のボールの位置と狙う位置の高さの差
-        float tuningVelocityY = yDifference < 0f ? NormalTuningVelocityY : LoopTuningVelocityY; // ネットよりボールが低い場合にはループ気味に打つ
+        float yDifference = targetHeight - ballHeight; // 現在のボールの位置と狙う位置の高さの差. ボールがネットより高い時はネットへ, ネットより低い時はきもち高めに打つ.
+        bool isBallHeight = yDifference < 0f;
+        float tuningVelocityY = isBallHeight ? NormalTuningVelocityY : LoopTuningVelocityY; // ネットよりボールが低い場合にはループ気味に打つ
         float velocityY = yDifference * tuningVelocityY; 
 
         // X方向速度 (ラケットの傾きと速度から決定)
@@ -143,17 +159,16 @@ public class BallMovement : MonoBehaviour
         float angleFactor = 1f - Mathf.Abs(racketRotationX + 90f) / 90f + TunignAngle; 
 
         // ラケットの速さ: ラケットの動きが速いほどボールが飛び, ラケットの動きが遅いほどボールが飛ばない
-        // float speedFactor = racketRb.linearVelocity.magnitude;
         float actualRacketSpeed = Mathf.Abs(racketRb.linearVelocity.x); 
         float speedFactor = Mathf.Max(actualRacketSpeed, RacketMinSpeed); // ラケットが2.5fより速く動いていたらそれを適用, それ以下だったら2.5fの速さをボールに与える
-        float velocityX = angleFactor * speedFactor * TuningVelocityX;
+        float tuningVelocityX = isBallHeight ? NormalTuningVelocityX : LoopTuningVelocityX;  // ネットよりボールが低い場合にはループ気味に打つ
+        float velocityX = angleFactor * speedFactor * tuningVelocityX;
 
-        if (racket.CompareTag("EnemyBat")) // Enemy が打つ時はX方向速度が逆になる
+        // Enemy が打つ時はX方向速度が逆になる
+        if (racket.CompareTag("EnemyBat")) 
             velocityX *= -1;
 
-        rb.linearVelocity = new Vector3(velocityX, velocityY, 0f); // ボールに速さを適用
-
-        Debug.Log($"[Flight] ballY: {ballHeight}, velocityY: {velocityY}, racketAngleX: {racketRotationX}, angleFactor:{angleFactor}, speedFactor: {speedFactor}, finalVelocity: {rb.linearVelocity}");
+        return new Vector3(velocityX, velocityY, 0f);
     }
 
     // ボールの数秒先の軌道を予測する関数
@@ -207,12 +222,10 @@ public class BallMovement : MonoBehaviour
         if (collision.gameObject.CompareTag("EnemyBat")){
             Debug.Log(collision.gameObject.name);
             HandleBatCollision(collision);
-            // AdjustTrajectory(collision);
         }
         if (collision.gameObject.CompareTag("PlayerBat")){
             Debug.Log(collision.gameObject.name);
-            HandleBatSpinCollision(collision);
-            AdjustTrajectory(collision);
+            HandleBatCollision(collision);
         }
     }
 
