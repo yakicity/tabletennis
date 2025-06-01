@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 
 using Unity.VisualScripting;
@@ -5,11 +6,15 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem.iOS;
 using UnityEngine.Rendering;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 
-public class MoveRacket : MonoBehaviour
+public class RacketController : MonoBehaviour
 {
-    private float moveSpeed = 3.0f;    // ラケットの移動速度
+    private static float moveSpeed = 3.0f;    // ラケットの移動速度
+    private static float minMoveSpeed = 2.0f;
+    private static float maxMoveSpeed = 4.0f;
+    private static float maxChargeTime = 1.0f; // 1秒ためたら maxSpeed になる
+    private static float racketMoveDistance = 0.1f;
     private GameObject ball;
 
     private Vector3 initialPosition;
@@ -46,6 +51,10 @@ public class MoveRacket : MonoBehaviour
     private float holdDuration = 0f;
     private float boostSpeed;
     private float timeScale;
+    private bool isBoostMoving = false;
+    public GameObject boostSlider;
+    private float ratio;
+
 
     private Vector3 moveInput = Vector3.zero;
     Rigidbody rb;
@@ -87,7 +96,8 @@ public class MoveRacket : MonoBehaviour
     void FixedUpdate()
     {
         // キー入力がある時だけ速度を与え、ない時は止める
-        rb.linearVelocity = moveInput * moveSpeed;
+        if (!isBoostMoving)
+            rb.linearVelocity = moveInput * moveSpeed;
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
         // UpdateRotation();   // ラケットの向きを更新
         UpdateRotationDiscrete(); // ラケットの向きを離散的に更新
@@ -104,6 +114,9 @@ public class MoveRacket : MonoBehaviour
             // ダブルタップ判定
             if (lastTapTime > 0f && (now - lastTapTime)  / timeScale <= doubleTapThreshold)
             {
+                holdDuration = now - lastTapTime;
+                ratio = Mathf.Clamp01(holdDuration / maxChargeTime);
+                boostSlider.GetComponent<Image>().fillAmount = ratio;
                 isDoubleTap = true;
                 Debug.Log("Double Tap Detected!");
             }
@@ -128,13 +141,15 @@ public class MoveRacket : MonoBehaviour
 
                 if (isDoubleTap)
                 {
-                    boostSpeed = Mathf.Clamp(holdDuration * 5f, 1f, 10f);
-                    rb.linearVelocity = new Vector3(boostSpeed, rb.linearVelocity.y, rb.linearVelocity.z);
+                    float boostSpeed = Mathf.Lerp(minMoveSpeed, maxMoveSpeed, ratio);
+                    StartCoroutine(MoveRacketCoroutine(boostSpeed));
                     Debug.Log($"Boost Applied: {boostSpeed}");
                 }
             }
+            boostSlider.GetComponent<Image>().fillAmount = 0;
             isDoubleTap = false;
             isHolding = false;
+
         }
         if (!isDoubleTap) // ため中は完全停止！
         {
@@ -143,11 +158,31 @@ public class MoveRacket : MonoBehaviour
             if (Input.GetKey(KeyCode.A)) moveInput.z += 1;
             if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
         }
-        // else
-        // {
-        //     // ため中は Debug 表示（確認用）
-        //     Debug.Log("In Double Tap (Charging), movement disabled.");
-        // }
+        if (Input.GetKey(KeyCode.C) && isDoubleTap && isHolding)
+        {
+            holdDuration = Time.time - pressStartTime;
+            ratio = Mathf.Clamp01(holdDuration / maxChargeTime);
+            boostSlider.GetComponent<Image>().fillAmount = ratio;
+        }
+    }
+
+    // cボタンを二度押しして長押しした後, ラケットを貯めた分の速さだけ動かす
+    IEnumerator MoveRacketCoroutine(float moveSpeed)
+    {
+        Vector3 initialPos = transform.position;
+        isBoostMoving = true;
+
+        rb.linearVelocity = new Vector3(moveSpeed, rb.linearVelocity.y, rb.linearVelocity.z);
+
+        while (Mathf.Abs(initialPos.x - transform.position.x) < racketMoveDistance)
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        rb.linearVelocity = Vector3.zero;
+        isBoostMoving = false;
+
+        Debug.Log("MoveRacket ended!");
     }
     // ラケットの向きを更新
     // カットスピンの時はラケットを少し下向きに傾ける
@@ -202,8 +237,4 @@ public class MoveRacket : MonoBehaviour
             lineRenderer.enabled = false;
     }
 
-    void OnCollisionEnter(Collision collision){
-        // ballMovement.ApplyDriveSpin();
-        // ballMovement.ApplyCutSpin();
-    }
 }

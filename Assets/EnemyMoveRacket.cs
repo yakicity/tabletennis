@@ -53,16 +53,4 @@ public class EnemyMoveRacket : MonoBehaviour
         }
     }
 
-    void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Ball"))
-        {
-            if (ballRb != null || ballMovement == null)
-                return;
-
-            ballMovement.ApplyDriveSpin(); // ドライブ回転をかける
-            ballRb.linearVelocity = returnDirection * returnSpeed; // 速さを与えて山なりにボールを返す
-            Debug.Log("AIが返球しました");
-        }
-    }
 }

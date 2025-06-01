@@ -16,7 +16,7 @@ public class BallMovement : MonoBehaviour
     private float linearDampingValue = 0f; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
     private float angularDampingValue = 0f; // 回転空気抵抗（摩擦）
     private float massValue = 0.0027f; // 卓球ボールの重さ（kg）
-    private float magnusForceScale = 1e-6f; // マグナス力のスケーリング（適当な試行値、0.001〜0.01くらい）
+    private float magnusForceScale = 1e-7f; // マグナス力のスケーリング（適当な試行値、0.001〜0.01くらい）
     private float rubberPower = 20f;
     private static float netHeight = 0.94f;
     private float targetHeight = netHeight + 0.2f; // ネットより少し高い位置を狙う
@@ -24,6 +24,7 @@ public class BallMovement : MonoBehaviour
     private const float LoopTuningVelocityY = 6f;
     private const float TuningVelocityX = 1.5f;
     private const float TunignAngle = 1.0f;
+    private const float TuningSpinPower = 1.0f;
 
     private GameObject stand;
     private float standY; // ボールが跳ね返る高さ
@@ -77,8 +78,8 @@ public class BallMovement : MonoBehaviour
         // デバッグ用に敵のラケットが当たった時だけ
         if (collision.gameObject.CompareTag("EnemyBat")){
             Debug.Log(collision.gameObject.name);
-            AdjustTrajectory(collision);
-            // HandleBatCollision(collision);
+            HandleBatCollision(collision);
+            // AdjustTrajectory(collision);
         }
         if (collision.gameObject.CompareTag("PlayerBat")){
             Debug.Log(collision.gameObject.name);
@@ -91,6 +92,7 @@ public class BallMovement : MonoBehaviour
     void HandleBatCollision(Collision collision)
     {
         Vector3 spin = rb.angularVelocity; // ボールの回転速度
+        Debug.Log("spin: "+ spin);
         Vector3 normal = collision.contacts[0].normal; // ラケットの法線
         GameObject racket = collision.gameObject; 
         Rigidbody racketRb = racket.GetComponent<Rigidbody>(); 
@@ -116,8 +118,8 @@ public class BallMovement : MonoBehaviour
     void HandleBatSpinCollision(Collision collision)
     {
         Vector3 normal = collision.contacts[0].normal;
-        GameObject racket = collision.gameObject; 
-        Rigidbody racketRb = racket.GetComponent<Rigidbody>(); 
+        GameObject racket = collision.gameObject;
+        Rigidbody racketRb = racket.GetComponent<Rigidbody>();
         Vector3 racketVelocity = racketRb.linearVelocity;
 
         // ラケットの接線方向の速度（擦ってる方向）
@@ -125,11 +127,10 @@ public class BallMovement : MonoBehaviour
         // 回転軸（スピン方向） = 接線 × 法線
         Vector3 spinDir = Vector3.Cross(tangentialVel, normal).normalized;
         // 回転の強さ = 接線速度の大きさ × スピン係数
-        float spinAmount = tangentialVel.magnitude * rubberPower; 
+        float spinAmount = tangentialVel.magnitude * rubberPower;
         // 回転ベクトルとしてセット
-        rb.angularVelocity = spinDir * spinAmount;
+        rb.angularVelocity = new Vector3(rb.angularVelocity.x,rb.angularVelocity.y, spinDir.z * spinAmount);
 
-        // デバッグ表示
         Debug.Log($"[Spin] tangentialVel: {tangentialVel}, spinDir: {spinDir}, spinAmount: {spinAmount}, rb.angularVelocity: {rb.angularVelocity}");
     }
     void AdjustTrajectory(Collision collision)
@@ -157,8 +158,6 @@ public class BallMovement : MonoBehaviour
 
         rb.linearVelocity = rb.linearVelocity * 0.05f + new Vector3(velocityX, velocityY, 0f);
         Debug.Log($"[Flight] ballY: {ballHeight}, velocityY: {velocityY}, racketAngleX: {racketRotationX}, angleFactor:{angleFactor}, speedFactor: {speedFactor}, finalVelocity: {rb.linearVelocity}");
-
-
     }
 
     Vector3 CalculateNewVelocity(Vector3 paddleVel, Vector3 normal)
@@ -183,19 +182,6 @@ public class BallMovement : MonoBehaviour
 
     }
 
-    public void ApplyCutSpin()
-    {
-        // 下回転（Z軸まわりの反時計回転）
-        Debug.Log("cut");
-        rb.angularVelocity = new Vector3(0f, 0f, 54000f);
-    }
-
-    public void ApplyDriveSpin()
-    {
-        // 上回転（Z軸まわりの時計回転）
-        Debug.Log("drive");
-        rb.angularVelocity = new Vector3(0f, 0f, -54000f);
-    }
     private void ApplySpinEffect()
     {
         // スピンによって跳ね返りを変化させる処理
