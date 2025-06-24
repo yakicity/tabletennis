@@ -17,6 +17,7 @@ public class BallMovement : MonoBehaviour
     private int maxSteps = 500; // 予測のための計算回数
     private float timeStep = 0.02f; // 予測する時間幅
     private Rigidbody rb;
+    
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -47,6 +48,7 @@ public class BallMovement : MonoBehaviour
         // 現在の速度の方向（青線）も表示してみると面白い
         Debug.DrawRay(transform.position, rb.linearVelocity.normalized * 0.5f, Color.blue);
     }
+
     void OnCollisionEnter(Collision collision)
     {
         rb.useGravity = true;

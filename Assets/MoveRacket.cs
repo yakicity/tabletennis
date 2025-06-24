@@ -1,9 +1,5 @@
 using System.Collections.Generic;
-
-using Unity.VisualScripting;
-
 using UnityEngine;
-using UnityEngine.Rendering;
 
 public class MoveRacket : MonoBehaviour
 {
@@ -12,30 +8,16 @@ public class MoveRacket : MonoBehaviour
 
     private Vector3 initialPosition;
 
-    private Vector3 normalRotationVector = new Vector3(-90f, -90f, 180f); // 通常のラケットの向き
-    private Vector3 driveRotationVector = new Vector3(-110f, -90f, 180f); // 少し上向きに傾ける
-    private Vector3 cutRotationVector = new Vector3(-50f, -90f, 180f); // 少し下向きに傾ける
-    private Vector3 rightRotationVector = new Vector3(-90f, -90f, 210f); // 少し右向きに傾ける
-    private Vector3 leftRotationVector = new Vector3(-90f, -90f, 150f); // 少し左向きに傾ける
     private Quaternion normalRotation;  // 通常のラケットの向き
-    private Quaternion driveRotation;  // ドライブのラケットの向き
-
-    private Quaternion cutRotation;     // カットスピンのラケットの向き
-    private Quaternion rightRotation;     // 右向きのラケット
-
-    private Quaternion leftRotation;     // 左向きラケット
-    // 衝突時
-    private Vector3 racketVelocityAtCollision = new Vector3(3f, 0f, 0f); // 衝突時のラケットの速度
-    private float reflectScale = 0.4f; // 反射の強さ
-    private float racketImpactScale = 1.0f; // ラケットの勢いで押し出す強さ
 
     // 衝突(離散)
-    private Vector3 returnDirectionNormal = new Vector3(-0.3f, 0.2f, 0.0f).normalized;
-    private Vector3 returnDirectionDrive = new Vector3(-0.3f, 0.2f, 0.0f).normalized;
-    private Vector3 returnDirectionCut = new Vector3(-0.3f, 0.2f, 0.0f).normalized;
-    private Vector3 returnDirectionRight = new Vector3(-0.3f, 0.2f, 0.2f).normalized;
-    private Vector3 returnDirectionLeft = new Vector3(-0.3f, 0.2f, -0.2f).normalized;
-    private float returnSpeed = 3f;
+    private float returnSpeed = 5f;
+
+    // 矢印キーでボールを放つZ座標
+    private float rightArrowZTarget = -1.74f;
+    private float leftArrowZTarget = -0.76f;
+    private float xTarget = 1.70f;
+    private float zTarget;
 
     private Vector3 moveInput = Vector3.zero;
     Rigidbody rb;
@@ -48,17 +30,15 @@ public class MoveRacket : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         initialPosition = transform.position;
-        // rb.isKinematic =true; // ラケットの物理演算を無効にする
 
-        normalRotation = Quaternion.Euler(normalRotationVector);
-        driveRotation = Quaternion.Euler(driveRotationVector);
-        cutRotation = Quaternion.Euler(cutRotationVector);
-        rightRotation = Quaternion.Euler(rightRotationVector);
-        leftRotation = Quaternion.Euler(leftRotationVector);
+        normalRotation = Quaternion.Euler(-90f, -90f, 180f); // ラケットの向きを常に通常に設定
 
-        // 衝突判定を連続的にする
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        // 衝突判定をトリガーにする
+        // ラケットの物理演算を無効にする（衝突を物理計算に任せないため）
+        rb.isKinematic = true;
+        rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+        rb.interpolation = RigidbodyInterpolation.None;
+
 
         ball = GameObject.Find("Ball");
         ballRb = ball.GetComponent<Rigidbody>();
@@ -70,14 +50,17 @@ public class MoveRacket : MonoBehaviour
     void Update()
     {
         HandleInput(); // キー入力を取得
+        update_target_position(); // ラケットの位置を更新
+        // キー入力がある時だけ位置を更新
+        if (moveInput != Vector3.zero)
+        {
+            rb.MovePosition(transform.position + moveInput * moveSpeed * Time.fixedDeltaTime);
+        }
+        AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
+        transform.rotation = normalRotation; // ラケットの向きを常に通常に設定
     }
     void FixedUpdate()
     {
-        // キー入力がある時だけ速度を与え、ない時は止める
-        rb.linearVelocity = moveInput * moveSpeed;
-        AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
-        // UpdateRotation();   // ラケットの向きを更新
-        UpdateRotationDiscrete(); // ラケットの向きを更新
 
     }
     void HandleInput()
@@ -87,25 +70,6 @@ public class MoveRacket : MonoBehaviour
         if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
         if (Input.GetKey(KeyCode.W)) moveInput.x += 1;
         if (Input.GetKey(KeyCode.S)) moveInput.x -= 1;
-    }
-    // ラケットの向きを更新
-    // カットスピンの時はラケットを少し下向きに傾ける
-    void UpdateRotation()
-    {
-        if (Input.GetKey(KeyCode.UpArrow)) transform.rotation *= Quaternion.Euler(5f, 0f, 0f);
-        if (Input.GetKey(KeyCode.DownArrow)) transform.rotation *= Quaternion.Euler(-5f, 0f, 0f);
-        if (Input.GetKey(KeyCode.RightArrow)) transform.rotation *= Quaternion.Euler(0f, 0f, 5f);
-        if (Input.GetKey(KeyCode.LeftArrow)) transform.rotation *= Quaternion.Euler(0f, 0f, -5f);
-        if (Input.GetKey(KeyCode.C)) transform.rotation = normalRotation;
-    }
-
-    void UpdateRotationDiscrete()
-    {
-        if (Input.GetKey(KeyCode.UpArrow)) transform.rotation = driveRotation;
-        else if (Input.GetKey(KeyCode.DownArrow)) transform.rotation = cutRotation;
-        else if (Input.GetKey(KeyCode.RightArrow)) transform.rotation = rightRotation;
-        else if (Input.GetKey(KeyCode.LeftArrow)) transform.rotation = leftRotation;
-        else transform.rotation = normalRotation;
     }
 
     void AdjustPositionToBall(float targetX)
@@ -141,68 +105,50 @@ public class MoveRacket : MonoBehaviour
             lineRenderer.enabled = false;
     }
 
-    // return directionを決定する
-    Vector3 checkReturnDirection()
+    void update_target_position()
     {
-        if (transform.rotation == cutRotation)
+        if (Input.GetKey(KeyCode.RightArrow))
         {
-            return returnDirectionCut;
+            zTarget = rightArrowZTarget;
+            Debug.Log("Right Arrow pressed, zTarget: " + zTarget);
         }
-        else if (transform.rotation == driveRotation)
-        {
-            return returnDirectionDrive;
-        }
-        else if (transform.rotation == rightRotation)
-        {
-            return returnDirectionRight;
-        }
-        else if (transform.rotation == leftRotation)
-        {
-            return returnDirectionLeft;
-        }
-        else
-        {
-            return returnDirectionNormal;
-        }
+        else if (Input.GetKey(KeyCode.LeftArrow)) zTarget = leftArrowZTarget;
+        else zTarget = ball.transform.position.z; // 矢印キーが押されていない場合は、卓球台の中心方向へ返す
     }
 
-    // void OnCollisionEnter(Collision collision)
+    // return directionを決定する
+    Vector3 CalculateReturnDirection(Vector3 currentBallPosition)
+    {
+        Vector3 targetPosition = new Vector3(xTarget, currentBallPosition.y, zTarget); // Xはラケットの現在位置、Yはボールの高さを使う
+        Debug.Log("targetPosition: " + targetPosition);
+        // ボールから目標地点へのベクトルを計算し、正規化する
+        Vector3 direction = (targetPosition - currentBallPosition).normalized;
+        Debug.Log("direction: " + (targetPosition - currentBallPosition));
+        // X方向は常にプレイヤーから相手コート方向へ、Y方向は少し上向きになるように調整
+        // direction.x = Mathf.Abs(direction.x); // 常に相手コート方向（-X）
+        direction.y = Mathf.Max(direction.y, 0.2f); // 最低でも少し上向きに
+        return direction.normalized; // 再度正規化
+    }
+
     void OnTriggerEnter(Collider collision)
     {
         if (collision.gameObject.CompareTag("Ball"))
         {
+            ballRb.useGravity = true;
             if (ballRb != null)
             {
-                // Vector3 racketVelocity = rb.linearVelocity; // ラケットの動き
-                // Vector3 normal = collision.contacts[0].normal; // 接触面の法線
-                // Debug.Log(normal);
-                // Vector3 incomingVelocity = ballRb.linearVelocity;   // ボールの動き
+                Vector3 returnDirection = CalculateReturnDirection(ball.transform.position);
+                ballRb.linearVelocity = returnDirection * returnSpeed; // 速さを与えてボールを返す
 
-                // // 「ラケットの速度方向」と「法線」の加味
-                // Vector3 finalVelocity = Vector3.Reflect(incomingVelocity, -normal) * reflectScale// 物理的反射
-                //                                                                                  // + racketVelocity * 2f; // ラケットの勢いで押し出す
-                //                     + racketVelocityAtCollision * racketImpactScale; // 衝突時ラケットの勢い(固定)で押し出す
-                // // Debug.Log(finalVelocity);
-
-                // ballRb.linearVelocity = finalVelocity;
-                // // Debug.Log(racketVelocity);
-
-                Vector3 returnDirection = checkReturnDirection();
-                ballRb.linearVelocity = returnDirection * returnSpeed; // 速さを与えて山なりにボールを返す
-
-
+                // ボールの回転処理はBallMovementスクリプトに任せる
                 if (ballMovement != null)
                 {
-                    if (transform.rotation == cutRotation)
-                    {
-                        Debug.Log("カットスピンの条件: ");
-                        // ballMovement.ApplyCutSpin();
-                    }
-                    else
-                    {
-                        Debug.Log("ドライブ: ");
-                        // ballMovement.ApplyDriveSpin();
-                    }
+                    // 今回の仕様変更では矢印キーが打球方向を決めるため、
+                    // スピンの適用はシンプルに固定値にしたり、
+                    // 矢印キーの押下状態によって変化させたりすることが考えられます。
+                    // 現状は、元のコードでドライブとカットスピンのDebug.Logしかないので、
+                    // ここでのスピンの適用は割愛します。必要であれば追加してください。
+                    Debug.Log("ボールがラケットに接触しました。");
                 }
             }
         }
