@@ -27,13 +27,15 @@ public class BallMovement : MonoBehaviour
     private const float RubberPower = 20f; // ラバーによる回転量の増加率
     private const float NormalTuningVelocityY =1.0f; // ボールがネットより高い時のY方向速度調整
     private const float LoopTuningVelocityY = 6f; // ボールがネットより低い時のY方向速度調整
-    private const float NormalTuningVelocityX = 1.6f; // ボールがネットより高い時のX方向速度の調整
-    private const float LoopTuningVelocityX = 1.4f; // ボールがネットより低い時のX方向速度の調整
+    private const float TuningVelocityX = 0.5f; // ボールがネットより高い時のX方向速度の調整
+    private const float TuningSpinEffect = 1.0f; // ボールがネットより低い時のX方向速度の調整
     private const float TunignAngle = 1.0f; // ラケット傾きによる飛距離補正
     private const float NetHeight = 0.94f; // ネットの高さ （Y座標）
     private float targetHeight = NetHeight + 0.3f; // ボールが狙う高さ (ネットより少し高め)
     private const float RacketMinSpeed = 2.0f; // ラケットの最低限の速さ
     private const float SpinDecreaseRate = 0.8f;
+    private Vector3 defaultReturn = new(4.0f, 2.0f, 0.0f);
+    // private Vector3 defaultReturn = new(6.0f, 2.0f, 0.0f);
 
 
     /**
@@ -110,8 +112,15 @@ public class BallMovement : MonoBehaviour
         Debug.Log($"hitVelocity: {hitVelocity}");
 
         // ボールに最終的な速度とスピンを適用
-        rb.linearVelocity = spinEffect + hitVelocity;
+        // rb.linearVelocity = spinEffect + hitVelocity;
+        // 一旦, どの弾が来てもdefault で返すように
+        // rb.linearVelocity = defaultReturn + spinEffect + hitVelocity;
+        rb.linearVelocity = defaultReturn + hitVelocity;
         rb.angularVelocity = finalSpin;
+
+        // 相手が打ち返す方向に変える
+        defaultReturn.x *= -1;
+
         Debug.Log($"rb.linearVelocity: {rb.linearVelocity}, rb.angularVelocity: {rb.angularVelocity}");
     }
     // ラケットの傾きと動かす速さによって生成される, 回転速度を計算する
@@ -140,35 +149,39 @@ public class BallMovement : MonoBehaviour
         // 回転量の大きさ
         float spinMagnitude = spin.magnitude; 
         // 実際に適用するベクトル
-        return spinDir * spinMagnitude; 
+        return spinDir * spinMagnitude * TuningSpinEffect; 
     }
     Vector3 CalculateHitVelocity(Collision collision)
     {
         GameObject racket = collision.gameObject;
         Rigidbody racketRb = racket.GetComponent<Rigidbody>();
 
-        // Y方向速度 (ネットとの位置関係から決定)
-        float ballHeight = gameObject.transform.position.y;
-        float yDifference = targetHeight - ballHeight; // 現在のボールの位置と狙う位置の高さの差. ボールがネットより高い時はネットへ, ネットより低い時はきもち高めに打つ.
-        bool isBallHeight = yDifference < 0f;
-        float tuningVelocityY = isBallHeight ? NormalTuningVelocityY : LoopTuningVelocityY; // ネットよりボールが低い場合にはループ気味に打つ
-        float velocityY = yDifference * tuningVelocityY; 
+        // // Y方向速度 (ネットとの位置関係から決定)
+        // float ballHeight = gameObject.transform.position.y;
+        // float yDifference = targetHeight - ballHeight; // 現在のボールの位置と狙う位置の高さの差. ボールがネットより高い時はネットへ, ネットより低い時はきもち高めに打つ.
+        // bool isBallHeight = yDifference < 0f;
+        // float tuningVelocityY = isBallHeight ? NormalTuningVelocityY : LoopTuningVelocityY; // ネットよりボールが低い場合にはループ気味に打つ
+        // float velocityY = yDifference * tuningVelocityY; 
 
         // X方向速度 (ラケットの傾きと速度から決定)
         float racketRotationX = Mathf.DeltaAngle(0f, collision.gameObject.transform.eulerAngles.x) ;
+        Debug.Log($"racketRotationX: {racketRotationX}");
         float angleFactor = 1f - Mathf.Abs(racketRotationX + 90f) / 90f + TunignAngle; 
 
         // ラケットの速さ: ラケットの動きが速いほどボールが飛び, ラケットの動きが遅いほどボールが飛ばない
         float actualRacketSpeed = Mathf.Abs(racketRb.linearVelocity.x); 
-        float speedFactor = Mathf.Max(actualRacketSpeed, RacketMinSpeed); // ラケットが2.5fより速く動いていたらそれを適用, それ以下だったら2.5fの速さをボールに与える
-        float tuningVelocityX = isBallHeight ? NormalTuningVelocityX : LoopTuningVelocityX;  // ネットよりボールが低い場合にはループ気味に打つ
-        float velocityX = angleFactor * speedFactor * tuningVelocityX;
+        float speedFactor = Mathf.Max(actualRacketSpeed, RacketMinSpeed); // ラケットが RacketMinSpeed より速く動いていたらそれを適用, それ以下だったら RacketMinSPeed の速さをボールに与える
+        // float velocityX = angleFactor * speedFactor * TuningVelocityX;
+        // 一旦, ラケットの速さだけでどうなるのかを確かめる
+        float velocityX = (speedFactor - RacketMinSpeed) * TuningVelocityX;
 
         // Enemy が打つ時はX方向速度が逆になる
         if (racket.CompareTag("EnemyBat")) 
             velocityX *= -1;
 
-        return new Vector3(velocityX, velocityY, 0f);
+        Debug.Log(velocityX);
+
+        return new Vector3(velocityX, 0f, 0f);
     }
 
     // ボールの数秒先の軌道を予測する関数
@@ -220,10 +233,12 @@ public class BallMovement : MonoBehaviour
 
         // デバッグ用に敵のラケットが当たった時だけ
         if (collision.gameObject.CompareTag("EnemyBat")){
+            rb.linearVelocity = Vector3.zero;
             Debug.Log(collision.gameObject.name);
             HandleBatCollision(collision);
         }
         if (collision.gameObject.CompareTag("PlayerBat")){
+            rb.linearVelocity = Vector3.zero;
             Debug.Log(collision.gameObject.name);
             HandleBatCollision(collision);
         }

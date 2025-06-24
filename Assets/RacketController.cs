@@ -19,11 +19,11 @@ public class RacketController : MonoBehaviour
     /**
     * ラケットの前後の動きに関するパラメータやいや移動のための変数
     */
-    private static float moveSpeed = 3.0f; // ラケットの移動速度
-    private static float minMoveSpeed = 2.0f; // ラケットが威力を溜めた時の最小のスピード
-    private static float maxMoveSpeed = 4.0f; // ラケットが威力を溜めた時の最大のスピード
-    private static float maxChargeTime = 1.0f; // 1秒ためたら maxSpeed になる
-    private static float racketMoveDistance = 0.2f; // ラケットが威力を溜めた後に移動する距離
+    private const float moveSpeed = 2.0f; // ラケットの移動速度
+    private const float MinMoveSpeed = 2.0f; // ラケットが威力を溜めた時の最小のスピード
+    private const float MaxMoveSpeed = 4.0f; // ラケットが威力を溜めた時の最大のスピード
+    private const float MaxChargeTime = 0.5f; // 0.5秒ためたら maxSpeed になる
+    private const float RacketMoveDistance = 0.2f; // ラケットが威力を溜めた後に移動する距離
     private Vector3 moveInput = Vector3.zero; // ラケットが動く速さ. 入力によって変化する
 
     /**
@@ -133,7 +133,7 @@ public class RacketController : MonoBehaviour
         // --- Cボタン長押し中 ---
         if (Input.GetKey(KeyCode.C) && isBoostCharging)
         {
-            boostChargeRatio = Mathf.Clamp01(tapDuration / maxChargeTime);
+            boostChargeRatio = Mathf.Clamp01(tapDuration / MaxChargeTime);
         }
 
         // --- Cボタン離した時 ---
@@ -141,7 +141,7 @@ public class RacketController : MonoBehaviour
         {
             if (isBoostCharging)
             {
-                float boostSpeed = Mathf.Lerp(minMoveSpeed, maxMoveSpeed, boostChargeRatio);
+                float boostSpeed = Mathf.Lerp(MinMoveSpeed, MaxMoveSpeed, boostChargeRatio);
                 StartCoroutine(MoveRacketCoroutine(boostSpeed));
                 Debug.Log($"Boost Applied: {boostSpeed}");
             }
@@ -174,7 +174,7 @@ public class RacketController : MonoBehaviour
 
         rb.linearVelocity = new Vector3(moveSpeed, rb.linearVelocity.y, rb.linearVelocity.z);
 
-        while (Mathf.Abs(initialPos.x - transform.position.x) < racketMoveDistance)
+        while (Mathf.Abs(initialPos.x - transform.position.x) < RacketMoveDistance)
         {
             yield return new WaitForFixedUpdate(); // 1フレーム分ラケットを動かす
         }
