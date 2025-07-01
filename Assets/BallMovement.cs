@@ -36,6 +36,10 @@ public class BallMovement : MonoBehaviour
     private const float SpinDecreaseRate = 0.8f;
     private Vector3 defaultReturn = new(4.0f, 2.0f, 0.0f);
     // private Vector3 defaultReturn = new(6.0f, 2.0f, 0.0f);
+    private Vector3 baseReturnVelocity = new Vector3(4.0f, 2.0f, 0.0f);
+    // 左右の傾き1段階あたりに加算されるオフセット
+    private Vector3 rollVelocityOffsetPerLevel = new Vector3(0.0f, 0.0f, -0.5f);
+
 
 
     /**
@@ -90,39 +94,38 @@ public class BallMovement : MonoBehaviour
     }
 
     // ボールの回転・ヒット時の速度補正を適用する
-    void HandleBatCollision(Collision collision)
+    void HandleBatCollision(Collision collision, bool is_enemy = false)
     {
         Vector3 currentSpin = rb.angularVelocity; // 現在のボールのスピン
         Vector3 generatedSpin = CalculateGeneratedSpin(collision); // ラケットの傾きと速度によって生成されるスピン
+        Vector3 returnVelocitybyRacketFace = CalculateDefaultReturn(collision, is_enemy); // ラケットの傾きによって生成される, ボールの速度ベクトル
         Vector3 finalSpin; // 最終的なスピン
         Vector3 spinEffect = Vector3.zero;
-        Debug.Log($"currentSpin: {currentSpin}, generateSpin: {generatedSpin}");
+        // Debug.Log($"currentSpin: {currentSpin}, generateSpin: {generatedSpin}");
 
         // スピン比較：生成スピンが強ければ上書き、弱ければ合成＋ズレ補正
         if (Mathf.Abs(generatedSpin.z) > Mathf.Abs(currentSpin.z * SpinDecreaseRate))
-            finalSpin = generatedSpin; 
+            finalSpin = generatedSpin;
         else {
-            finalSpin = generatedSpin + currentSpin; 
+            finalSpin = generatedSpin + currentSpin;
             spinEffect = CalculateSpinEffect(collision, finalSpin);
             Debug.Log($"finalSpin: {finalSpin}, spinEffect: {spinEffect}");
         }
 
         // ラケットの速さと傾きによる速度補正を計算する
         Vector3 hitVelocity = CalculateHitVelocity(collision);
-        Debug.Log($"hitVelocity: {hitVelocity}");
+        // Debug.Log($"hitVelocity: {hitVelocity}");
 
         // ボールに最終的な速度とスピンを適用
         // rb.linearVelocity = spinEffect + hitVelocity;
         // 一旦, どの弾が来てもdefault で返すように
         // rb.linearVelocity = defaultReturn + spinEffect + hitVelocity;
-        rb.linearVelocity = defaultReturn + hitVelocity;
+        rb.linearVelocity = returnVelocitybyRacketFace + hitVelocity + spinEffect;
         rb.angularVelocity = finalSpin;
 
-        // 相手が打ち返す方向に変える
-        defaultReturn.x *= -1;
-
-        Debug.Log($"rb.linearVelocity: {rb.linearVelocity}, rb.angularVelocity: {rb.angularVelocity}");
+        // Debug.Log($"rb.linearVelocity: {rb.linearVelocity}, rb.angularVelocity: {rb.angularVelocity}");
     }
+
     // ラケットの傾きと動かす速さによって生成される, 回転速度を計算する
     Vector3 CalculateGeneratedSpin(Collision collision){
         Vector3 normal = collision.contacts[0].normal;
@@ -140,16 +143,119 @@ public class BallMovement : MonoBehaviour
         return new Vector3(rb.angularVelocity.x, rb.angularVelocity.y, spinDir.z * spinAmount);
     }
 
+    // ラケットの傾きによって、ボールを打ち返すデフォルトの速度ベクトルを計算する
+    Vector3 CalculateDefaultReturn(Collision collision, bool is_enemy = false)
+    {
+        if (is_enemy)
+        {
+            Vector3 finalVelocity = baseReturnVelocity;
+            finalVelocity.x *= -1; // 敵のラケットの場合はX方向を反転
+            return finalVelocity; // 敵のラケットの場合はデフォルトの返球速度を返す
+        }
+        else
+        {
+            GameObject racketObject = collision.gameObject;
+            RacketController racketController = racketObject.GetComponent<RacketController>();
+            // ラケットコントローラーが取得できなければ、デフォルト値を返す
+            if (racketController == null)
+            {
+                Debug.LogWarning("衝突オブジェクトにRacketControllerが見つかりません。");
+                return baseReturnVelocity;
+            }
+            // 1. ラケットから現在の状態インデックスを取得
+            int[] angleIndices = racketController.GetAngleIndices();
+            int leftRightIndex = angleIndices[1];
+
+            // 2. 基本となる返球速度から計算を開始
+            Vector3 finalVelocity = baseReturnVelocity;
+
+            // 4. 左右の状態に応じて速度を調整
+            // (例) 右に2段階なら、rollVelocityOffsetPerLevel * 2 が加算される
+            finalVelocity += rollVelocityOffsetPerLevel * leftRightIndex;
+
+            // 5. 敵が打った場合は、進行方向(X,Z)を反転させる
+            if (is_enemy)
+            {
+                finalVelocity.x *= -1;
+                // finalVelocity.y *= -1;
+            }
+            return finalVelocity;
+        }
+
+
+        // // ラケットのrotationをオイラー角（XYZ角度）に変換
+        // Vector3 eulerAngles = racket.transform.rotation.eulerAngles;
+        // Vector3 returnVelocitybyRacketFace = defaultReturn; // デフォルトの返球方向
+
+        // // デバッグ用に現在の角度を表示（問題解決に役立ちます）
+        // Debug.Log($"Racket Euler Angles: {eulerAngles}");
+
+        // // --- ラケットの向きによる分岐 ---
+        // // Y軸の回転角度で向きを判定するのが一般的です。
+        // // 角度には誤差があるため、完全な一致(==)ではなく、範囲で比較するのが安全です。
+        // Debug.Log($"Racket Y Angle: {eulerAngles.y}");
+        // // 例：Y軸の角度が約45度なら「デフォルト」
+        // if (Mathf.Abs(eulerAngles.y - 90.0f) < 5.0f)
+        // {
+        //     Debug.Log("判定: デフォルト");
+        //     // デフォルトの返球方向（右利きの場合のフォアハンドストレートのようなイメージ）
+        //     returnVelocitybyRacketFace = defaultReturn;
+        // }
+        // // 例：Y軸の角度が約60度なら「左向き」
+        // else if (Mathf.Abs(eulerAngles.y - 70.0f) < 5.0f)
+        // {
+        //     Debug.Log("判定: 左向き");
+        //     // 左方向への返球（クロス方向）
+        //     // Xの値をマイナスにする、Zの値を変えるなどで調整
+        //     returnVelocitybyRacketFace = new Vector3(4.0f, 2.0f, 1.0f);
+        // }
+        // // 例：Y軸の角度が約30度なら「右向き」
+        // else if (Mathf.Abs(eulerAngles.y - 110.0f) < 5.0f)
+        // {
+        //     Debug.Log("判定: 右向き");
+        //     // 右方向への返球（逆クロス方向）
+        //     returnVelocitybyRacketFace = new Vector3(4.0f, 2.0f, -1.0f);
+        // }
+        // // 例：Y軸の角度が約60度なら「左向き」
+        // else if (Mathf.Abs(eulerAngles.y - 50.0f) < 5.0f)
+        // {
+        //     Debug.Log("判定: 2段階目左向き");
+        //     // 左方向への返球（クロス方向）
+        //     // Xの値をマイナスにする、Zの値を変えるなどで調整
+        //     returnVelocitybyRacketFace = new Vector3(4.0f, 2.0f, 1.5f);
+        // }
+        // // 例：Y軸の角度が約30度なら「右向き」
+        // else if (Mathf.Abs(eulerAngles.y - 130.0f) < 5.0f)
+        // {
+        //     Debug.Log("判定: 2段階目右向き");
+        //     // 右方向への返球（逆クロス方向）
+        //     returnVelocitybyRacketFace = new Vector3(4.0f, 2.0f, -1.5f);
+        // }
+        // else
+        // {
+        //     Debug.Log("判定: どれにも当てはまらない（デフォルトを返します）");
+        //     // いずれの条件にも一致しない場合のデフォルト値
+        //     returnVelocitybyRacketFace = defaultReturn;
+        // }
+
+        // if (is_enemy)
+        // {
+        //     // Enemy が打つ時はX方向速度が逆になる
+        //     returnVelocitybyRacketFace.x *= -1;
+        // }
+        // return returnVelocitybyRacketFace;
+    }
+
     // ボールの回転によってずれる方向を計算する
     Vector3 CalculateSpinEffect(Collision collision, Vector3 spin){
         // 接触点の法線
-        Vector3 normal = collision.contacts[0].normal; 
+        Vector3 normal = collision.contacts[0].normal;
         // ずれる方向の単位ベクトル
-        Vector3 spinDir = Vector3.Cross(spin, normal).normalized; 
+        Vector3 spinDir = Vector3.Cross(spin, normal).normalized;
         // 回転量の大きさ
-        float spinMagnitude = spin.magnitude; 
+        float spinMagnitude = spin.magnitude;
         // 実際に適用するベクトル
-        return spinDir * spinMagnitude * TuningSpinEffect; 
+        return spinDir * spinMagnitude * TuningSpinEffect;
     }
     Vector3 CalculateHitVelocity(Collision collision)
     {
@@ -161,25 +267,25 @@ public class BallMovement : MonoBehaviour
         // float yDifference = targetHeight - ballHeight; // 現在のボールの位置と狙う位置の高さの差. ボールがネットより高い時はネットへ, ネットより低い時はきもち高めに打つ.
         // bool isBallHeight = yDifference < 0f;
         // float tuningVelocityY = isBallHeight ? NormalTuningVelocityY : LoopTuningVelocityY; // ネットよりボールが低い場合にはループ気味に打つ
-        // float velocityY = yDifference * tuningVelocityY; 
+        // float velocityY = yDifference * tuningVelocityY;
 
         // X方向速度 (ラケットの傾きと速度から決定)
         float racketRotationX = Mathf.DeltaAngle(0f, collision.gameObject.transform.eulerAngles.x) ;
-        Debug.Log($"racketRotationX: {racketRotationX}");
-        float angleFactor = 1f - Mathf.Abs(racketRotationX + 90f) / 90f + TunignAngle; 
+        // Debug.Log($"racketRotationX: {racketRotationX}");
+        float angleFactor = 1f - Mathf.Abs(racketRotationX + 90f) / 90f + TunignAngle;
 
         // ラケットの速さ: ラケットの動きが速いほどボールが飛び, ラケットの動きが遅いほどボールが飛ばない
-        float actualRacketSpeed = Mathf.Abs(racketRb.linearVelocity.x); 
+        float actualRacketSpeed = Mathf.Abs(racketRb.linearVelocity.x);
         float speedFactor = Mathf.Max(actualRacketSpeed, RacketMinSpeed); // ラケットが RacketMinSpeed より速く動いていたらそれを適用, それ以下だったら RacketMinSPeed の速さをボールに与える
         // float velocityX = angleFactor * speedFactor * TuningVelocityX;
         // 一旦, ラケットの速さだけでどうなるのかを確かめる
         float velocityX = (speedFactor - RacketMinSpeed) * TuningVelocityX;
 
         // Enemy が打つ時はX方向速度が逆になる
-        if (racket.CompareTag("EnemyBat")) 
+        if (racket.CompareTag("EnemyBat"))
             velocityX *= -1;
 
-        Debug.Log(velocityX);
+        // Debug.Log(velocityX);
 
         return new Vector3(velocityX, 0f, 0f);
     }
@@ -235,12 +341,12 @@ public class BallMovement : MonoBehaviour
         if (collision.gameObject.CompareTag("EnemyBat")){
             rb.linearVelocity = Vector3.zero;
             Debug.Log(collision.gameObject.name);
-            HandleBatCollision(collision);
+            HandleBatCollision(collision, true);
         }
         if (collision.gameObject.CompareTag("PlayerBat")){
             rb.linearVelocity = Vector3.zero;
             Debug.Log(collision.gameObject.name);
-            HandleBatCollision(collision);
+            HandleBatCollision(collision, false);
         }
     }
 

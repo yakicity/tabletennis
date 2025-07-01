@@ -29,16 +29,25 @@ public class RacketController : MonoBehaviour
     /**
     * ラケットの傾きに関するパラメータや変数
     */
-    private Vector3 normalRotationVector = new Vector3(-90f, -90f, 180f); // 通常のラケットの向き
-    private Vector3 driveRotationVector = new Vector3(-100f, -90f, 180f); // 少し下向きに傾ける
-    private Vector3 cutRotationVector = new Vector3(-70f, -90f, 180f); // 少し上向きに傾ける
-    private Vector3 rightRotationVector = new Vector3(-90f, -90f, 210f); // 少し右向きに傾ける
-    private Vector3 leftRotationVector = new Vector3(-90f, -90f, 150f); // 少し左向きに傾ける
-    private Quaternion normalRotation;  // 通常のラケットの向き
-    private Quaternion driveRotation;  // ドライブのラケットの向き
-    private Quaternion cutRotation;     // カットスピンのラケットの向き
-    private Quaternion rightRotation;     // 右向きのラケット
-    private Quaternion leftRotation;     // 左向きラケット
+    // private Vector3[] allRacketRotationVector = new Vector3[]
+    // {
+    //     new Vector3(-90f, -90f, 180f), // racketFaceIndex[0,0]: 通常のラケットの向き
+    //     new Vector3(-100f, -90f, 180f), // racketFaceIndex[1,0]: ドライブのラケットの向き
+    //     new Vector3(-70f, -90f, 180f), // racketFaceIndex[-1,0]: カットスピンのラケットの向き
+    //     new Vector3(-90f, -90f, 200f), // racketFaceIndex[0,1]: 右向きのラケット
+    //     new Vector3(-90f, -90f, 160f), // racketFaceIndex[0,-1]: 左向きラケット
+    //     new Vector3(-90f, -90f, 220f), // racketFaceIndex[0,2]: 右向きのラケット
+    //     new Vector3(-90f, -90f, 140f)  // racketFaceIndex[0,-2]: 左向きラケット
+    // };
+
+    private Vector3 baseRotationVector = new Vector3(-90f, -90f, 180f); // 通常時の基本角度
+    private float drivePitchAngle = -10f; // ドライブは基本から-10度
+    private float cutPitchAngle = 20f;   // カットは基本から+20度
+    private float rollAnglePerLevel = 20f; // 1段階あたり20度傾く
+
+    private int[] racketFaceIndex = new int[2]; // ラケットの向きのインデックス. 0: drive cut,  1: right left
+    // right left = 0: 通常, 1: firstLevelRight, 2: secondLevelRight, -1: firstLevelLeft, -2: secondLevelLeft
+    // drive cut = 0: 通常, 1: drive, -1: cut
 
     /**
     * ボールを返す方向
@@ -71,15 +80,9 @@ public class RacketController : MonoBehaviour
     private Image boostSliderImage;
     private float timeScale; // ゲーム内の時間の進む速さ (0 ~ 1)
 
+
     void Start()
     {
-        // ラケットの傾きに関する変数の初期化
-        normalRotation = Quaternion.Euler(normalRotationVector);
-        driveRotation = Quaternion.Euler(driveRotationVector);
-        cutRotation = Quaternion.Euler(cutRotationVector);
-        rightRotation = Quaternion.Euler(rightRotationVector);
-        leftRotation = Quaternion.Euler(leftRotationVector);
-
         // 各種コンポーネントや Unity上の設定を取得
         rb = GetComponent<Rigidbody>();
         ball = GameObject.Find("Ball");
@@ -93,12 +96,17 @@ public class RacketController : MonoBehaviour
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
+        // 右左の向きのインデックス
+        racketFaceIndex[0] = 0; // 通常のラケットの向き
+        racketFaceIndex[1] = 0; // 通常のラケットの向き
+
     }
 
     void Update()
     {
         HandleBoostInput(); // Cボタンの2回連続タップと長押し入力を取得
         UpdateBoostUI(); // 長押し時の UI 更新
+        UpdateRotationDiscrete(); // ラケットの向きを離散的に更新
         HandleInput(); // 前後左右いどのための入力を取得
     }
 
@@ -108,7 +116,7 @@ public class RacketController : MonoBehaviour
         if (!isBoostMoving)
             rb.linearVelocity = moveInput * moveSpeed;
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
-        UpdateRotationDiscrete(); // ラケットの向きを離散的に更新
+
     }
 
     void HandleBoostInput(){
@@ -185,11 +193,42 @@ public class RacketController : MonoBehaviour
 
     void UpdateRotationDiscrete()
     {
-        if (Input.GetKey(KeyCode.UpArrow)) transform.rotation = driveRotation;
-        else if (Input.GetKey(KeyCode.DownArrow)) transform.rotation = cutRotation;
-        else if (Input.GetKey(KeyCode.RightArrow)) transform.rotation = rightRotation;
-        else if (Input.GetKey(KeyCode.LeftArrow)) transform.rotation = leftRotation;
-        else transform.rotation = normalRotation;
+        if (Input.GetKeyDown(KeyCode.UpArrow) && racketFaceIndex[0] < 1) racketFaceIndex[0]++;
+        else if (Input.GetKeyDown(KeyCode.DownArrow) && racketFaceIndex[0] > -1) racketFaceIndex[0]--;
+        else if (Input.GetKeyDown(KeyCode.RightArrow) && racketFaceIndex[1] < 2) racketFaceIndex[1]++;
+        else if (Input.GetKeyDown(KeyCode.LeftArrow) && racketFaceIndex[1] > -2) racketFaceIndex[1]--;
+
+        // 現在のracketFaceIndexに基づいてラケットの向きを更新する
+        transform.rotation = CalculateTargetRotation();
+    }
+    private Quaternion CalculateTargetRotation()
+    {
+        // 1. 基本となる回転角度からスタート
+        Vector3 targetEulerAngles = baseRotationVector;
+
+        // 2. ドライブ/カットの状態に応じてピッチ角（X軸）を調整
+        if (racketFaceIndex[0] == 1) // ドライブ
+        {
+            targetEulerAngles.x += drivePitchAngle;
+        }
+        else if (racketFaceIndex[0] == -1) // カット
+        {
+            targetEulerAngles.x += cutPitchAngle;
+        }
+        // 3. 左右の状態に応じてロール角（Z軸）を調整
+        // これにより、-2, -1, 0, 1, 2 のすべての段階に対応できる
+        targetEulerAngles.z += racketFaceIndex[1] * rollAnglePerLevel;
+        // 4. 計算されたオイラー角から最終的なQuaternionを生成して返す
+        return Quaternion.Euler(targetEulerAngles);
+    }
+
+    /// <summary>
+    /// 現在のラケットの角度状態インデックス [0:左右, 1:上下] を返す
+    /// </summary>
+    /// <returns>ラケットの角度状態インデックス</returns>
+    public int[] GetAngleIndices()
+    {
+        return racketFaceIndex;
     }
 
     void AdjustPositionToBall(float targetX)
