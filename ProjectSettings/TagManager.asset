@@ -8,6 +8,8 @@ TagManager:
   - wall
   - table
   - bat
+  - EnemyBat
+  - PlayerBat
   layers:
   - Default
   - TransparentFX
