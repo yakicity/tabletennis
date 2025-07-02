@@ -120,7 +120,8 @@ public class BallMovement : MonoBehaviour
         // rb.linearVelocity = spinEffect + hitVelocity;
         // 一旦, どの弾が来てもdefault で返すように
         // rb.linearVelocity = defaultReturn + spinEffect + hitVelocity;
-        rb.linearVelocity = returnVelocitybyRacketFace + hitVelocity + spinEffect;
+        rb.linearVelocity = returnVelocitybyRacketFace + hitVelocity;
+        // rb.linearVelocity = returnVelocitybyRacketFace + hitVelocity + spinEffect;
         rb.angularVelocity = finalSpin;
 
         // Debug.Log($"rb.linearVelocity: {rb.linearVelocity}, rb.angularVelocity: {rb.angularVelocity}");

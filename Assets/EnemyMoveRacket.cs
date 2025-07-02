@@ -1,40 +1,21 @@
+using System.Collections;
 using System.Collections.Generic;
 
+using Unity.VisualScripting;
+
 using UnityEngine;
-using UnityEngine.InputSystem;
-
-public class EnemyMoveRacket : MonoBehaviour
+using UnityEngine.InputSystem.iOS;
+using UnityEngine.Rendering;
+using UnityEngine.UI;
+public class EnemyMoveRacket : BaseRacketController
 {
-    private Rigidbody rb;
-    private GameObject ball;
-    private Rigidbody ballRb;
-    private BallMovement ballMovement;
-
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        rb = GetComponent<Rigidbody>();
-        // 衝突判定を連続的にする
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
-
-        ball = GameObject.Find("Ball");
-        ballRb = ball.GetComponent<Rigidbody>();
-        ballMovement = ball.GetComponent<BallMovement>();
-    }
-
-    // Update is called once per frame
-    void Update() 
-    { 
-
-    }
-
+    // FixedUpdate
     void FixedUpdate()
     {
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
     }
 
+    // baseクラスのものは、味方のラケット用のAdjustPositionToBallである。オーバーライドする必要がある。
     void AdjustPositionToBall(float targetX)
     {
         if (ball == null || ballRb == null || ballMovement == null)
