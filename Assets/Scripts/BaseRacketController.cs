@@ -194,4 +194,29 @@ public abstract class BaseRacketController : MonoBehaviour
         else
             lineRenderer.enabled = false;
     }
+
+    /// <summary>
+    /// ラケットの位置、回転、物理状態を初期化
+    /// </summary>
+    public void ResetState(Vector3 initialPosition, Quaternion initialRotation)
+    {
+        // 位置と回転を初期状態に戻す
+        transform.position = initialPosition;
+        transform.rotation = initialRotation;
+
+        // Rigidbodyが設定されていれば、動きを完全に止める
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        // ラケットの角度インデックスもリセットする
+        racketFaceIndex[0] = 0;
+        racketFaceIndex[1] = 0;
+
+        // その他、必要に応じてリセットしたい変数をここに追加
+        isBoostCharging = false;
+        isBoostMoving = false;
+    }
 }

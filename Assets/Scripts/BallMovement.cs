@@ -107,10 +107,12 @@ public class BallMovement : MonoBehaviour
         // Debug.Log($"currentSpin: {currentSpin}, generateSpin: {generatedSpin}");
 
         // スピン比較：生成スピンが強ければ上書き、弱ければ合成＋ズレ補正
-        if (Mathf.Abs(generatedSpin.z) > Mathf.Abs(currentSpin.z * SpinDecreaseRate)){
+        if (Mathf.Abs(generatedSpin.z) > Mathf.Abs(currentSpin.z * SpinDecreaseRate))
+        {
             finalSpin = generatedSpin;
         }
-        else {
+        else
+        {
             finalSpin = generatedSpin + currentSpin;
             spinEffect = CalculateSpinEffect(ballCollision, finalSpin);
             Debug.Log($"finalSpin: {finalSpin}, spinEffect: {spinEffect}");
@@ -126,7 +128,8 @@ public class BallMovement : MonoBehaviour
     }
 
     // ラケットの傾きと動かす速さによって生成される, 回転速度を計算する
-    Vector3 CalculateGeneratedSpin(Collision ballCollision, GameObject racket){
+    Vector3 CalculateGeneratedSpin(Collision ballCollision, GameObject racket)
+    {
         Vector3 normal = ballCollision.contacts[0].normal;
         Rigidbody racketRb = racket.GetComponent<Rigidbody>();
         Vector3 racketVelocity = racketRb.linearVelocity;
@@ -229,7 +232,8 @@ public class BallMovement : MonoBehaviour
     }
 
     // ボールの回転によってずれる方向を計算する
-    Vector3 CalculateSpinEffect(Collision ballCollision, Vector3 spin){
+    Vector3 CalculateSpinEffect(Collision ballCollision, Vector3 spin)
+    {
         // 接触点の法線
         Vector3 normal = ballCollision.contacts[0].normal;
         // ずれる方向の単位ベクトル
@@ -249,13 +253,13 @@ public class BallMovement : MonoBehaviour
 
         // X方向速度 (ラケットの傾きと速度から決定)
         // ラケットの速さ: ラケットの動きが速いほどボールが飛び, ラケットの動きが遅いほどボールが飛ばない
-        float actualRacketSpeed = Mathf.Abs(racketRb.linearVelocity.x); 
+        float actualRacketSpeed = Mathf.Abs(racketRb.linearVelocity.x);
         float speedFactor = Mathf.Max(actualRacketSpeed, RacketMinSpeed); // ラケットが RacketMinSpeed より速く動いていたらそれを適用, それ以下だったら RacketMinSPeed の速さをボールに与える
         // velocityX = (ラケットの速さ - ラケットの最低速度 : 0f ~ 2f) * (ラケットの角度: 0f ~ 1f) * (パラメータ : 0.5f)
-        float velocityX = (speedFactor - RacketMinSpeed) * (1- Mathf.Abs(angleFactor)) * TuningVelocityX;
+        float velocityX = (speedFactor - RacketMinSpeed) * (1 - Mathf.Abs(angleFactor)) * TuningVelocityX;
 
         // Enemy が打つ時はX方向速度が逆になる
-        if (racket.CompareTag("EnemyBat")) 
+        if (racket.CompareTag("EnemyBat"))
             velocityX *= -1;
 
         return new Vector3(velocityX, velocityY, 0f);
@@ -294,12 +298,14 @@ public class BallMovement : MonoBehaviour
     }
 
     // バウンド判定
-    private bool IsBounceTriggered(Vector3 currentPos, Vector3 nextPos){
+    private bool IsBounceTriggered(Vector3 currentPos, Vector3 nextPos)
+    {
         return currentPos.y > StandY && nextPos.y <= StandY;
     }
 
     // X方向の目標到達判定
-    private bool HasCrossedTargetX(float currentX, float nextX, float targetX){
+    private bool HasCrossedTargetX(float currentX, float nextX, float targetX)
+    {
         return (currentX - targetX) * (nextX - targetX) <= 0f;
     }
 
@@ -308,5 +314,24 @@ public class BallMovement : MonoBehaviour
         // ラケットがボールに触れたら重力を付与
         rb.useGravity = true;
     }
+
+    /// <summary>
+    /// ボールの位置、回転、物理状態を初期化
+    /// </summary>
+    public void ResetState(Vector3 initialPosition, Quaternion initialRotation)
+    {
+        // 位置と回転を初期状態に戻す
+        transform.position = initialPosition;
+        transform.rotation = initialRotation;
+
+        // Rigidbodyが設定されていれば、動きを止めて重力も無効化する
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.useGravity = false;
+        }
+    }
+
 
 }
