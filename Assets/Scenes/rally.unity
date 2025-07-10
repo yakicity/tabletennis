@@ -448,6 +448,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boostSlider: {fileID: 1194703915}
+  aiLevel: 1
 --- !u!65 &649602940
 BoxCollider:
   m_ObjectHideFlags: 0

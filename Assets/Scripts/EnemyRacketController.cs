@@ -8,15 +8,34 @@ using UnityEngine;
 using UnityEngine.InputSystem.iOS;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+public enum EnemyAILevel
+{
+    Level1,
+    Level2
+}
 public class EnemyRacketController : BaseRacketController
 {
+    [SerializeField] private EnemyAILevel aiLevel = EnemyAILevel.Level1;
     private EnemyAIBase enemyAI;
     protected override void Start()
     {
         base.Start(); // BaseRacketControllerのUpdate()を実行
-        enemyAI = GetComponent<EnemyAIBase>();
+        switch (aiLevel)
+        {
+            case EnemyAILevel.Level1:
+                enemyAI = gameObject.AddComponent<EnemyAILevel1>();
+                break;
+            case EnemyAILevel.Level2:
+                enemyAI = gameObject.AddComponent<EnemyAILevel2>();
+                break;
+            default:
+                Debug.LogError("Unknown AI Level");
+                break;
+        }
+
         if (enemyAI == null)
-            Debug.LogError("EnemyAIBase がアタッチされていません！");
+            Debug.LogError("EnemyAIBase の取得に失敗しました！");
+
     }
     // FixedUpdate
     void FixedUpdate()
