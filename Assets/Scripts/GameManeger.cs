@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour
     [Header("リセット対象オブジェクト")]
     public BaseRacketController playerRacket; // プレイヤーのラケット
     public BaseRacketController enemyRacket;  // 相手のラケット
-    public BallMovement ball;                 // ボール
+    public BaseBallMovement ball;                 // ボール
 
 
     // 各オブジェクトの初期位置と回転を保存する変数

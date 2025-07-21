@@ -10,7 +10,7 @@ using System;
 using UnityEditor.Callbacks;
 using System.Net.NetworkInformation;
 
-public class BallMovement : MonoBehaviour
+public class BaseBallMovement : MonoBehaviour
 {
     /**
     * ボールやボールの動きに関するパラメータ
@@ -53,19 +53,22 @@ public class BallMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
 
         // ボールやボールの動きに関するパラメータ設定
-        rb.useGravity = false; // 最初は重力を無効にする
-        rb.mass = MassValue; // 卓球ボールの重さ（kg）
-        rb.linearDamping = LinearDampingValue; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
-        rb.angularDamping = AngularDampingValue; // 回転空気抵抗（摩擦）
+    }
+
+    public void InitializeParameter(Rigidbody ballRb){
+        ballRb.useGravity = false; // 最初は重力を無効にする
+        ballRb.mass = MassValue; // 卓球ボールの重さ（kg）
+        ballRb.linearDamping = LinearDampingValue; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
+        ballRb.angularDamping = AngularDampingValue; // 回転空気抵抗（摩擦）
 
         // ボールのすり抜け対策
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        ballRb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        ballRb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
     void FixedUpdate()
     {
-        ApplyMagnusEffect(); // マグナス力の適用
+        ApplyMagnusEffect(rb); // マグナス力の適用
     }
 
     void Update()
@@ -78,21 +81,21 @@ public class BallMovement : MonoBehaviour
         // Debug.Log("AngularVelocity" + rb.angularVelocity);
     }
 
-    void ApplyMagnusEffect()
+    public void ApplyMagnusEffect(Rigidbody ballRb)
     {
-        Vector3 velocity = rb.linearVelocity;
-        Vector3 spin = rb.angularVelocity;
+        Vector3 velocity = ballRb.linearVelocity;
+        Vector3 spin = ballRb.angularVelocity;
 
         // Magnus 力 = 回転ベクトル × 速度ベクトル（スケーリングあり）
         Vector3 magnusForce = Vector3.Cross(spin, velocity) * MagnusForceScale;
-        rb.AddForce(magnusForce, ForceMode.Force);
+        ballRb.AddForce(magnusForce, ForceMode.Force);
     }
 
-    public void ApplyReturn(Vector3 velocity, Vector3 spin)
+    public void ApplyReturn(Vector3 velocity, Vector3 spin, Rigidbody ballRb)
     {
-        rb.linearVelocity = velocity;
-        rb.angularVelocity = spin;
-        rb.useGravity = true;
+        ballRb.linearVelocity = velocity;
+        ballRb.angularVelocity = spin;
+        ballRb.useGravity = true;
     }
 
     // ボールの回転・ヒット時の速度補正を計算する
@@ -124,6 +127,7 @@ public class BallMovement : MonoBehaviour
 
         // ボールに最終的な速度とスピンを適用
         Vector3 returnVelocity = baseReturnVelocity + hitVelocity + spinEffect;
+        Debug.Log($"returnVelocity: {returnVelocity}, finalSpin: {finalSpin}");
         return (returnVelocity, finalSpin);
     }
 

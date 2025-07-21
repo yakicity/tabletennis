@@ -78,3 +78,9 @@ crashlytics-build.properties
 
 # binary files
 /[Aa]ssets/[Bb]in/
+
+# Photon files
+/[Aa]ssets/Photon/
+
+# TextMesh Pro files
+/[Aa]ssets/TextMesh Pro/

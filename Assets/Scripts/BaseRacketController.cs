@@ -32,7 +32,6 @@ public abstract class BaseRacketController : MonoBehaviour
     // right left = 0: 通常, 1: firstLevelRight, 2: secondLevelRight, -1: firstLevelLeft, -2: secondLevelLeft
     // drive cut = 0: 通常, 1: drive, -1: cut
 
-
     /**
     * ボールを返す方向
     */
@@ -58,7 +57,7 @@ public abstract class BaseRacketController : MonoBehaviour
     protected Rigidbody rb; // ラケットの Rigidbody
     protected GameObject ball; // ゲーム内にあるボール
     protected Rigidbody ballRb; // ボールの Rigidbody
-    protected BallMovement ballMovement; // ボールの軌跡を予測するために用いる
+    protected BaseBallMovement ballMovement; // ボールの軌跡を予測するために用いる
     private LineRenderer lineRenderer; // ボールの軌跡を表示するために用いる
     private Image boostSliderImage;
     private float timeScale; // ゲーム内の時間の進む速さ
@@ -69,7 +68,7 @@ public abstract class BaseRacketController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         ball = GameObject.Find("Ball");
         ballRb = ball.GetComponent<Rigidbody>();
-        ballMovement = ball.GetComponent<BallMovement>();
+        ballMovement = ball.GetComponent<BaseBallMovement>();
         lineRenderer = ball.GetComponent<LineRenderer>();
         boostSliderImage = boostSlider.GetComponent<Image>();
         timeScale = Time.timeScale;
@@ -96,7 +95,7 @@ public abstract class BaseRacketController : MonoBehaviour
         // キー入力がある時だけ速度を与え、ない時は止める
         if (!isBoostMoving)
             rb.linearVelocity = moveInput * moveSpeed;
-        AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
+        AdjustPositionToBall(transform.position.x, gameObject); // ラケットの位置をボールに合わせる
     }
 
     private void HandleBoostInput()
@@ -165,9 +164,10 @@ public abstract class BaseRacketController : MonoBehaviour
         return racketFaceIndex;
     }
 
-    protected virtual void AdjustPositionToBall(float targetX)
+    public void AdjustPositionToBall(float targetX, GameObject racket)
     {
-        Vector3 pos = transform.position;
+        Vector3 pos = racket.transform.position;
+        Rigidbody racketRb = racket.GetComponent<Rigidbody>();
         List<Vector3> points = new();
         float? predictedY = ballMovement.SimulateUntilX(ball.transform.position, ballRb.linearVelocity, targetX, points);
         bool ballToPlayer = ballRb.linearVelocity.x < 0;
@@ -175,7 +175,7 @@ public abstract class BaseRacketController : MonoBehaviour
         if (ballToPlayer)
         {
             pos.y = predictedY ?? pos.y;
-            rb.MovePosition(pos);
+            racketRb.MovePosition(pos);
         }
 
         UpdateLineRender(points, ballToPlayer);

@@ -65,7 +65,7 @@ public class EnemyRacketController : BaseRacketController
     {
         if (!collision.gameObject.CompareTag("Ball")) return;
 
-        BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
+        BaseBallMovement ballMovement = collision.gameObject.GetComponent<BaseBallMovement>();
 
         // 敵CPUがラケットの傾きや速度を調整する傾きや速度を調整する
         enemyAI.AdjustRacketBeforeReturn(gameObject, rb);
@@ -85,6 +85,6 @@ public class EnemyRacketController : BaseRacketController
         Vector3 returnAnglarVelocity = returnData.Item2;
 
         // ボールに計算結果を適用する
-        ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+        ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity, collision.rigidbody);
     } 
 }

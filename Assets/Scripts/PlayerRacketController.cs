@@ -1,8 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-
+using Fusion;
 using Unity.VisualScripting;
-
 using UnityEngine;
 using UnityEngine.InputSystem.iOS;
 using UnityEngine.Rendering;
@@ -68,7 +67,7 @@ public class PlayerRacketController : BaseRacketController
     {
         if (!collision.gameObject.CompareTag("Ball")) return;
 
-        BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
+        BaseBallMovement ballMovement = collision.gameObject.GetComponent<BaseBallMovement>();
 
         // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
         var returnData = ballMovement.CalculateBallReturn(gameObject, collision);
@@ -80,7 +79,7 @@ public class PlayerRacketController : BaseRacketController
         Vector3 returnAnglarVelocity = returnData.Item2;
 
         // ボールに計算結果を適用する
-        ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+        ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity, collision.rigidbody);
     }
 
 }
