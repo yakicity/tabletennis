@@ -48,6 +48,9 @@ public class BallMovement : MonoBehaviour
     * ボールの Rigidbody
     */
     private Rigidbody rb;
+
+    [Header("ゲーム管理")]
+    public GameManager gameManager; // GameManagerへの参照
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -313,6 +316,28 @@ public class BallMovement : MonoBehaviour
     {
         // ラケットがボールに触れたら重力を付与
         rb.useGravity = true;
+
+        // ▼▼▼ 衝突相手のタグに応じてGameManagerに通知 ▼▼▼
+
+        // プレイヤーのラケットに当たった場合
+        if (collision.gameObject.CompareTag("PlayerBat"))
+        {
+            // プレイヤーが打ったことを通知
+            gameManager.OnRacketHit(true);
+        }
+        // 相手のラケットに当たった場合
+        else if (collision.gameObject.CompareTag("EnemyBat"))
+        {
+            // 相手が打ったことを通知
+            gameManager.OnRacketHit(false);
+        }
+        // コートに当たった場合
+        else if (collision.gameObject.CompareTag("table"))
+        {
+            Vector3 bouncePosition = collision.contacts[0].point;
+            gameManager.OnCourtBounce(bouncePosition);
+        }
+
     }
 
     /// <summary>
