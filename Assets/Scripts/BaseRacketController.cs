@@ -201,8 +201,8 @@ public abstract class BaseRacketController : MonoBehaviour
     public void ResetState(Vector3 initialPosition, Quaternion initialRotation)
     {
         // 位置と回転を初期状態に戻す
-        transform.position = initialPosition;
-        transform.rotation = initialRotation;
+        rb.position = initialPosition;
+        rb.rotation = initialRotation;
 
         // Rigidbodyが設定されていれば、動きを完全に止める
         if (rb != null)
