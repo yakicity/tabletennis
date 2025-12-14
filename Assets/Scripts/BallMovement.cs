@@ -39,7 +39,7 @@ public class BallMovement : MonoBehaviour
     /**
     * ボールの軌道を予測するために用いるパラメータや変数
     */
-    private const float StandY = 0.785f; // 台の高さ
+    private const float StandY = 0.820f; // 台の高さ
     private const float Bounciness = 1.0f;// 跳ね返りの強さ
     private const int MaxSteps = 50; // 予測のための計算回数
     private const float TimeStep = 0.01f; // 予測する時間幅
@@ -345,16 +345,37 @@ public class BallMovement : MonoBehaviour
     /// </summary>
     public void ResetState(Vector3 initialPosition, Quaternion initialRotation)
     {
-        // 位置と回転を初期状態に戻す
-        transform.position = initialPosition;
-        transform.rotation = initialRotation;
+        // // 位置と回転を初期状態に戻す
+        // transform.position = initialPosition;
+        // transform.rotation = initialRotation;
 
-        // Rigidbodyが設定されていれば、動きを止めて重力も無効化する
+        // // Rigidbodyが設定されていれば、動きを止めて重力も無効化する
+        // if (rb != null)
+        // {
+        //     rb.linearVelocity = Vector3.zero;
+        //     rb.angularVelocity = Vector3.zero;
+        //     rb.useGravity = false;
+        // }
+// 【重要】Rigidbodyがある場合は、transformではなくrb.positionに代入する
+        // これにより物理エンジン側に「強制ワープ」であることを即座に伝えます
         if (rb != null)
         {
+            rb.position = initialPosition;
+            rb.rotation = initialRotation;
+
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             rb.useGravity = false;
+
+            // 【追加】物理演算を強制的にスリープさせる
+            // これで「前のフレームの微細な衝突や計算」を完全に断ち切れます
+            // rb.Sleep();
+        }
+        else
+        {
+            // Rigidbodyがない場合のみ transform を使う
+            transform.position = initialPosition;
+            transform.rotation = initialRotation;
         }
     }
 

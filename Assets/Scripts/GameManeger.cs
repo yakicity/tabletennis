@@ -134,7 +134,8 @@ public class GameManager : MonoBehaviour
     // ボールから呼び出される公開メソッド
     public void OnCourtBounce(Vector3 bouncePosition)
     {
-        bool isPlayerSide = bouncePosition.x < 0.59;
+        bool isPlayerSide = bouncePosition.x < 0.543;
+        bool isEnemySide = bouncePosition.x > 0.651;
 
         switch (currentState)
         {
@@ -155,7 +156,7 @@ public class GameManager : MonoBehaviour
 
             // プレイヤーが打った後、初めてのバウンド
             case RallyState.PlayerJustHit:
-                if (!isPlayerSide)
+                if (isEnemySide)
                 {
                     lastBouncePosition = bouncePosition;
                     currentState = RallyState.BouncedOnEnemyCourt; // 正規の1バウンド
@@ -184,7 +185,7 @@ public class GameManager : MonoBehaviour
             // 相手コートで1バウンドした後、さらにバウンド
             case RallyState.BouncedOnEnemyCourt:
                 // 相手陣地で、かつ前回のバウンド位置から十分な距離があるかチェック
-                if (!isPlayerSide && (bouncePosition - lastBouncePosition).sqrMagnitude > MIN_BOUNCE_DISTANCE_SQR)
+                if (isEnemySide && (bouncePosition - lastBouncePosition).sqrMagnitude > MIN_BOUNCE_DISTANCE_SQR)
                 {
                     AwardPointToPlayer(); // 相手コートで2バウンド -> Pの得点
                     isRallyFinished = true;
