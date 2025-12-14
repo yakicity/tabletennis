@@ -118,7 +118,7 @@ GameObject:
   - component: {fileID: 2669014164510788299}
   - component: {fileID: -8845118156814791984}
   - component: {fileID: 4242137771184151611}
-  - component: {fileID: -7576007214033836378}
+  - component: {fileID: -8963605753480933622}
   m_Layer: 0
   m_Name: PingPongBat
   m_TagString: PlayerBat
@@ -287,7 +287,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 4242137771184151611}
-  - {fileID: -7576007214033836378}
+  - {fileID: -8963605753480933622}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4242137771184151611
 MonoBehaviour:
@@ -306,7 +306,7 @@ MonoBehaviour:
   SyncParent: 0
   _autoAOIOverride: 1
   DisableSharedModeInterpolation: 0
---- !u!114 &-7576007214033836378
+--- !u!114 &-8963605753480933622
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -315,11 +315,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 8673045077977712028}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d63b7d418a394e18862349ee7fe81e2, type: 3}
+  m_Script: {fileID: 11500000, guid: bfc21c16fa37a4c2f8b1aeb0119b6167, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseBallMovement: {fileID: -3928601722017560615, guid: 09d39677a698e451d93dd91dffcb7dc8, type: 3}
-  PlayerRacketController: {fileID: -3372739828608225041, guid: 3b4838be507314c0185ff0e2339b2a80, type: 3}
+  ball: {fileID: 1886431755638114681, guid: 3b2987d4285884817bbce448947c5317, type: 3}
 --- !u!1001 &3536319917981551313
 PrefabInstance:
   m_ObjectHideFlags: 0

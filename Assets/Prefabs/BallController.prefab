@@ -10,8 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 9058647515868067309}
   - component: {fileID: -3928601722017560615}
+  - component: {fileID: 2267463453696257445}
   m_Layer: 0
-  m_Name: BaseBallMovementPrefab
+  m_Name: BallController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -41,6 +42,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 6130667369249476231}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c42eb7c87e8343baa54b306c476aa1e, type: 3}
+  m_Script: {fileID: 11500000, guid: 3e16fd151a84148958a03f2a38230143, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2267463453696257445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6130667369249476231}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 3763750389
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: -3928601722017560615}
+  ForceRemoteRenderTimeframe: 0

@@ -408,9 +408,10 @@ MonoBehaviour:
   networkRunnerPrefab: {fileID: 2553170223432004486, guid: 210b8ba29ab5840cd8fccc9d053338a7, type: 3}
   playerRacketPrefab:
     RawGuidValue: 2900ba03198e442edbee4f0de0d15c2c
+  cpuRacketPrefab:
+    RawGuidValue: 00000000000000000000000000000000
   ballPrefab:
     RawGuidValue: 3b2987d4285884817bbce448947c5317
-  comingText: {fileID: 536329174}
 --- !u!4 &367506842
 Transform:
   m_ObjectHideFlags: 0
@@ -764,9 +765,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79090b3125b0a4416ae9ff8a1601b003, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerRacket: {fileID: 0}
-  enemyRacket: {fileID: 0}
-  ball: {fileID: 0}
 --- !u!4 &740882048
 Transform:
   m_ObjectHideFlags: 0
