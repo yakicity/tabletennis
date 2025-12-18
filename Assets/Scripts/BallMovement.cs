@@ -16,8 +16,8 @@ public class BallMovement : MonoBehaviour
     * ボールやボールの動きに関するパラメータ
     */
     private const float MassValue = 0.0027f; // 卓球ボールの重さ（kg）
-    private const float LinearDampingValue = 0f; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
-    private const float AngularDampingValue = 0f; // 回転空気抵抗（摩擦）
+    private const float LinearDampingValue = 0.1f; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
+    private const float AngularDampingValue = 0.1f; // 回転空気抵抗（摩擦）
     private const float MagnusForceScale = 1e-7f; // マグナス力のスケーリング（適当な試行値、0.001〜0.01くらい）
 
 
