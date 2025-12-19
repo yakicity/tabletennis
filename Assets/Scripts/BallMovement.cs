@@ -16,8 +16,8 @@ public class BallMovement : MonoBehaviour
     * ボールやボールの動きに関するパラメータ
     */
     private const float MassValue = 0.0027f; // 卓球ボールの重さ（kg）
-    private const float LinearDampingValue = 0f; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
-    private const float AngularDampingValue = 0f; // 回転空気抵抗（摩擦）
+    private const float LinearDampingValue = 0.1f; // 空気抵抗係数（適当な試行値、0.4〜1.0くらい）
+    private const float AngularDampingValue = 0.1f; // 回転空気抵抗（摩擦）
     private const float MagnusForceScale = 1e-7f; // マグナス力のスケーリング（適当な試行値、0.001〜0.01くらい）
 
 
@@ -25,14 +25,15 @@ public class BallMovement : MonoBehaviour
     * ボールの回転や飛ぶ方向に関するパラメータ
     */
     private const float RubberPower = 20f; // ラバーによる回転量の増加率
-    private const float TuningVelocityX = 0.5f; // ボールがネットより高い時のX方向速度の調整
+    private const float TuningVelocityX = 0.5f;
     private const float TuningVelocityY = 1.0f;
-    private const float TuningSpinEffect = 0.1f; // ボールがネットより低い時のX方向速度の調整
+    private const float TuningSpinEffect = 0.1f;
     private const float TunignAngle = 1.0f; // ラケット傾きによる飛距離補正
     private const float RacketMinSpeed = 2.0f; // ラケットの最低限の速さ
     private const float SpinDecreaseRate = 0.8f;
-    private Vector3 defaultReturn = new(4.0f, 2.0f, 0.0f);
     private Vector3 baseReturnVelocity = new(4.0f, 2.0f, 0.0f);
+    private Vector3 baseServeVelocity = new(3.0f, 2.0f, 0.0f);
+    private bool isServe = true; // サーブ中かどうか
     // 左右の傾き1段階あたりに加算されるオフセット
     private Vector3 rollVelocityOffsetPerLevel = new(0.0f, 0.0f, -0.5f);
 
@@ -127,6 +128,7 @@ public class BallMovement : MonoBehaviour
 
         // ボールに最終的な速度とスピンを適用
         Vector3 returnVelocity = baseReturnVelocity + hitVelocity + spinEffect;
+        isServe = false; // サーブ状態を解除
         return (returnVelocity, finalSpin);
     }
 
@@ -155,14 +157,15 @@ public class BallMovement : MonoBehaviour
         if (racketController == null)
         {
             Debug.LogWarning("衝突オブジェクトにRacketControllerが見つかりません。");
-            return baseReturnVelocity;
+            Debug.Log($"{(isServe ? baseServeVelocity : baseReturnVelocity)}: Returning base velocity.");
+            return isServe ? baseServeVelocity : baseReturnVelocity;
         }
         // 1. ラケットから現在の状態インデックスを取得
         int[] angleIndices = racketController.GetAngleIndices();
         int leftRightIndex = angleIndices[1];
 
         // 2. 基本となる返球速度から計算を開始
-        Vector3 finalVelocity = baseReturnVelocity;
+        Vector3 finalVelocity = isServe ? baseServeVelocity : baseReturnVelocity;
 
         // 4. 左右の状態に応じて速度を調整
         // (例) 右に2段階なら、rollVelocityOffsetPerLevel * 2 が加算される
@@ -377,6 +380,7 @@ public class BallMovement : MonoBehaviour
             transform.position = initialPosition;
             transform.rotation = initialRotation;
         }
+        isServe = true; // サーブ状態にリセット
     }
 
 
