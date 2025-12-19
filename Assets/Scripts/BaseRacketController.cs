@@ -24,9 +24,9 @@ public abstract class BaseRacketController : MonoBehaviour
     * ラケットの傾きに関するパラメータや変数
     */
     protected Vector3 baseRotationVector = new Vector3(-90f, -90f, 180f); // 通常時の基本角度
-    protected float drivePitchAngle = -70f; // ドライブは基本から-10度
-    protected float cutPitchAngle = 70f;   // カットは基本から+20度
-    protected float rollAnglePerLevel = 70f; // 1段階あたり20度傾く
+    protected float drivePitchAngle = -10f; // ドライブは基本から-10度
+    protected float cutPitchAngle = 20f;   // カットは基本から+20度
+    protected float rollAnglePerLevel = 20f; // 1段階あたり20度傾く
 
     protected int[] racketFaceIndex = new int[2]; // ラケットの向きのインデックス. 0: drive cut,  1: right left
     // right left = 0: 通常, 1: firstLevelRight, 2: secondLevelRight, -1: firstLevelLeft, -2: secondLevelLeft
