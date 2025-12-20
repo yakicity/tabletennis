@@ -508,6 +508,9 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("EnterServeMode: playerRacket / enemyRacket / ball のいずれかが Inspector に設定されていません。処理をスキップします。");
             return;
         }
+        // 合計スコアに基づいてどちらが次にサーブするかを決定
+        ServeStarter serverForNext = GetServerForNextServe();
+
 
         Vector3 playerPos;
         Vector3 enemyPos;
@@ -516,7 +519,7 @@ public class GameManager : MonoBehaviour
         Quaternion enemyRot  = EnemyServe_Rotation;
         Quaternion ballRot   = Ball_Rotation;
 
-        if (startingServer == ServeStarter.Player)
+        if (serverForNext == ServeStarter.Player)
         {
             playerPos = PlayerServe_PlayerPos;
             enemyPos  = PlayerServe_EnemyPos;
@@ -556,5 +559,18 @@ public class GameManager : MonoBehaviour
         scoreTextPlayer.text = scoreNumPlayer.ToString();
         scoreTextEnemy.text = scoreNumEnemy.ToString();
     }
-
+    /// <summary>
+    /// 現在の合計得点に応じて次のサーブ側を決定します。
+    /// - Inspector の `startingServer` はゲーム開始時の初期サーバーとして扱い、
+    ///   そこから合計得点の "2点ごとのブロック" 数に応じて交代します。
+    /// </summary>
+    private ServeStarter GetServerForNextServe()
+    {
+        int totalPoints = scoreNumPlayer + scoreNumEnemy;
+        int twoPointBlocks = totalPoints / 2;
+        bool useInitial = (twoPointBlocks % 2) == 0;
+        if (useInitial) return startingServer;
+        // 反対側を返す
+        return startingServer == ServeStarter.Player ? ServeStarter.Enemy : ServeStarter.Player;
+    }
 }
