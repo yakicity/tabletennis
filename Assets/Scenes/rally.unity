@@ -706,7 +706,7 @@ GameObject:
   - component: {fileID: 1220290838}
   - component: {fileID: 1220290837}
   m_Layer: 0
-  m_Name: GameManeger
+  m_Name: GameManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1269,7 +1269,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 726079139407410118, guid: f49f097561511dd499970e7f53740fdd, type: 3}
       propertyPath: m_Constraints
-      value: 114
+      value: 112
       objectReference: {fileID: 0}
     - target: {fileID: 5722168504380414926, guid: f49f097561511dd499970e7f53740fdd, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1485,7 +1485,7 @@ PrefabInstance:
       objectReference: {fileID: 13400000, guid: 70b8143430eab4479b3fc0615c8d377d, type: 2}
     - target: {fileID: 726079139407410118, guid: f49f097561511dd499970e7f53740fdd, type: 3}
       propertyPath: m_Mass
-      value: 0.2
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 726079139407410118, guid: f49f097561511dd499970e7f53740fdd, type: 3}
       propertyPath: m_UseGravity

@@ -26,7 +26,7 @@ public class GameManager : MonoBehaviour
 
     // サーブ時の固定座標（定数扱い）
     private static readonly Vector3 PlayerServe_PlayerPos = new Vector3(-1.4f, 1.04f, -1.123f);
-    private static readonly Vector3 PlayerServe_EnemyPos  = new Vector3( 2.1f, 1.04f, -1.123f);
+    public static readonly Vector3 PlayerServe_EnemyPos  = new Vector3( 2.1f, 1.04f, -1.123f);
     private static readonly Vector3 PlayerServe_BallPos   = new Vector3(-1.3f, 1.04f, -1.188f);
 
     private static readonly Vector3 EnemyServe_PlayerPos = new Vector3(-0.9f, 1.04f, -1.123f);
@@ -39,7 +39,7 @@ public class GameManager : MonoBehaviour
     private static readonly Quaternion Ball_Rotation         = Quaternion.Euler(0f, 0f, 0f);
 
     // ▼▼▼ ラリーの状態を管理するenum（ステートマシン） ▼▼▼
-    private enum RallyState
+    public enum RallyState
     {
         BeforeServe,          // サーブ前
         PlayerServeJustHit, // プレイヤーがサーブ打った直後
@@ -564,7 +564,7 @@ public class GameManager : MonoBehaviour
     /// - Inspector の `startingServer` はゲーム開始時の初期サーバーとして扱い、
     ///   そこから合計得点の "2点ごとのブロック" 数に応じて交代します。
     /// </summary>
-    private ServeStarter GetServerForNextServe()
+    public ServeStarter GetServerForNextServe()
     {
         int totalPoints = scoreNumPlayer + scoreNumEnemy;
         int twoPointBlocks = totalPoints / 2;
@@ -572,5 +572,10 @@ public class GameManager : MonoBehaviour
         if (useInitial) return startingServer;
         // 反対側を返す
         return startingServer == ServeStarter.Player ? ServeStarter.Enemy : ServeStarter.Player;
+    }
+
+    public RallyState GetCurrentRallyState()
+    {
+        return currentState;
     }
 }
