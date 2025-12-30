@@ -4,7 +4,9 @@ public enum EnemyAILevel
 {
     Level1,
     Level2,
-    Level3
+    Level3, 
+    Level4,
+    Level5
 }
 public class EnemyRacketController : BaseRacketController
 {
@@ -33,6 +35,12 @@ public class EnemyRacketController : BaseRacketController
                 break;
             case EnemyAILevel.Level3:
                 enemyAI = gameObject.AddComponent<EnemyAILevel3>();
+                break;
+            case EnemyAILevel.Level4:
+                enemyAI = gameObject.AddComponent<EnemyAILevel4>();
+                break;
+            case EnemyAILevel.Level5:
+                enemyAI = gameObject.AddComponent<EnemyAILevel5>();
                 break;
             default:
                 Debug.LogError("Unknown AI Level");
@@ -112,7 +120,7 @@ public class EnemyRacketController : BaseRacketController
         var returnData = ballMovement.CalculateBallReturn(gameObject, collision);
 
         // 返球速度
-        Vector3 returnVelocity = new Vector3
+        Vector3 returnVelocity = new()
         {
             x = returnData.Item1.x * -1,
             y = returnData.Item1.y,
