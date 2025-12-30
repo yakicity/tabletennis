@@ -3,6 +3,8 @@ using UnityEngine;
 public class EnemyAILevel5 : EnemyAIBase
 {
     private float TargetZ = -1.23f; // 台中央のz座標
+    public override float enemyRacketSpeed => 1.5f;
+
 
     public override void AdjustRacketBeforeReturn(GameObject racket, Rigidbody racketRb)
     {

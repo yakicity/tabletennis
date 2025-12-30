@@ -22,6 +22,7 @@ public class EnemyRacketController : BaseRacketController
     private RigidbodyConstraints originalConstraints;
 
 
+
     protected override void Start()
     {
         base.Start(); // BaseRacketControllerのUpdate()を実行
@@ -62,8 +63,6 @@ public class EnemyRacketController : BaseRacketController
         // ラケットの位置をボールに合わせる処理
         AdjustPositionToBall(transform.position.x);
 
-        // AdjustBackPosition();
-
         // サーブ担当の確認
         GameManager.ServeStarter serverForNext = gameManager.GetServerForNextServe();
         bool isEnemyServe = serverForNext == GameManager.ServeStarter.Enemy && gameManager.GetCurrentRallyState() == GameManager.RallyState.BeforeServe;
@@ -88,7 +87,8 @@ public class EnemyRacketController : BaseRacketController
             return;
 
         Vector3 pos = transform.position;
-        pos.z = ball.transform.position.z;
+        float speed = enemyAI.enemyRacketSpeed;
+        pos.z = Mathf.MoveTowards(pos.z, ball.transform.position.z, speed * Time.fixedDeltaTime);
 
         float? predictedY = ballMovement.SimulateUntilX(ball.transform.position, ballRb.linearVelocity, targetX);
 
@@ -99,14 +99,6 @@ public class EnemyRacketController : BaseRacketController
         }
     }
 
-    void AdjustBackPosition(){
-        Vector3 currentPos = transform.position;
-        if (!serveRoutineStarted && currentPos.x != initialPosition.x){
-            currentPos.x = Mathf.Lerp(currentPos.x, initialPosition.x, 0.1f);
-            rb.MovePosition(currentPos);
-        }
-    }
-    
     void OnCollisionEnter(Collision collision)
     {
         if (!collision.gameObject.CompareTag("Ball")) return;
