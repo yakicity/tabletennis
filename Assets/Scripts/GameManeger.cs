@@ -19,8 +19,27 @@ public class GameManager : MonoBehaviour
     private int scoreNumPlayer = 0; // スコア変数
     private int scoreNumEnemy = 0; // 相手のスコア変数
 
+    // サーブ開始側をインスペクタで選択可能にする
+    public enum ServeStarter { Player, Enemy }
+    [Header("サーブ開始側")]
+    public ServeStarter startingServer = ServeStarter.Player;
+
+    // サーブ時の固定座標（定数扱い）
+    private static readonly Vector3 PlayerServe_PlayerPos = new Vector3(-1.4f, 1.04f, -1.123f);
+    public static readonly Vector3 PlayerServe_EnemyPos  = new Vector3( 2.1f, 1.04f, -1.123f);
+    private static readonly Vector3 PlayerServe_BallPos   = new Vector3(-1.3f, 1.04f, -1.188f);
+
+    private static readonly Vector3 EnemyServe_PlayerPos = new Vector3(-0.9f, 1.04f, -1.123f);
+    private static readonly Vector3 EnemyServe_EnemyPos  = new Vector3( 2.6f, 1.04f, -1.123f);
+    private static readonly Vector3 EnemyServe_BallPos   = new Vector3( 2.5f, 1.04f, -1.188f);
+
+    // 回転の定数（どちらがサーブかに関わらず使用する）
+    private static readonly Quaternion PlayerServe_Rotation = Quaternion.Euler(-90f, -90f, 180f);
+    private static readonly Quaternion EnemyServe_Rotation  = Quaternion.Euler(-90f,  90f, 180f);
+    private static readonly Quaternion Ball_Rotation         = Quaternion.Euler(0f, 0f, 0f);
+
     // ▼▼▼ ラリーの状態を管理するenum（ステートマシン） ▼▼▼
-    private enum RallyState
+    public enum RallyState
     {
         BeforeServe,          // サーブ前
         PlayerServeJustHit, // プレイヤーがサーブ打った直後
@@ -45,24 +64,22 @@ public class GameManager : MonoBehaviour
     private const float MIN_BOUNCE_DISTANCE_SQR = 0.01f; // 2回目バウンドとして判定するための最低距離(の2乗)。0.1f * 0.1f
     private bool isRallyFinished = false; // ラリーが終了したかどうか
 
-    // 各オブジェクトの初期位置と回転を保存する変数
-    private Vector3 playerInitialPosition;
-    private Quaternion playerInitialRotation;
-    private Vector3 enemyInitialPosition;
-    private Quaternion enemyInitialRotation;
-    private Vector3 ballInitialPosition;
-    private Quaternion ballInitialRotation;
 
 
     void Start()
     {
-        StoreInitialTransforms();
         scoreTextPlayer = scoreTextPlayerObject.GetComponent<TMP_Text>();
         scoreTextEnemy = scoreTextEnemyObject.GetComponent<TMP_Text>();
         UpdateScoreText();
-        currentState = RallyState.BeforeServe; // 初期状態はサーブ
+        // 起動時からサーブ位置を反映させる
+        // 他コンポーネントの Start が終わるのを待ってからサーブ位置を反映する（NullReference を防ぐ）
+        StartCoroutine(DelayedEnterServeMode());
     }
-
+    private System.Collections.IEnumerator DelayedEnterServeMode()
+    {
+        yield return null; // 1フレーム待つ（他コンポーネントの Start が走る）
+        EnterServeMode();
+    }
     void Update()
     {
         UpdateScoreText(); // スコアテキストを更新
@@ -485,9 +502,39 @@ public class GameManager : MonoBehaviour
     public void EnterServeMode()
     {
         Debug.Log("サーブモードに切り替えます。");
-        playerRacket.ResetState(playerInitialPosition, playerInitialRotation);
-        enemyRacket.ResetState(enemyInitialPosition, enemyInitialRotation);
-        ball.ResetState(ballInitialPosition, ballInitialRotation);
+
+        if (playerRacket == null || enemyRacket == null || ball == null)
+        {
+            Debug.LogWarning("EnterServeMode: playerRacket / enemyRacket / ball のいずれかが Inspector に設定されていません。処理をスキップします。");
+            return;
+        }
+        // 合計スコアに基づいてどちらが次にサーブするかを決定
+        ServeStarter serverForNext = GetServerForNextServe();
+
+
+        Vector3 playerPos;
+        Vector3 enemyPos;
+        Vector3 ballPos;
+        Quaternion playerRot = PlayerServe_Rotation;
+        Quaternion enemyRot  = EnemyServe_Rotation;
+        Quaternion ballRot   = Ball_Rotation;
+
+        if (serverForNext == ServeStarter.Player)
+        {
+            playerPos = PlayerServe_PlayerPos;
+            enemyPos  = PlayerServe_EnemyPos;
+            ballPos   = PlayerServe_BallPos;
+        }
+        else // ServeStarter.Enemy
+        {
+            playerPos = EnemyServe_PlayerPos;
+            enemyPos  = EnemyServe_EnemyPos;
+            ballPos   = EnemyServe_BallPos;
+        }
+
+        playerRacket.ResetState(playerPos, playerRot);
+        enemyRacket.ResetState(enemyPos, enemyRot);
+        ball.ResetState(ballPos, ballRot);
 
         // 状態をリセット
         currentState = RallyState.BeforeServe;
@@ -512,19 +559,23 @@ public class GameManager : MonoBehaviour
         scoreTextPlayer.text = scoreNumPlayer.ToString();
         scoreTextEnemy.text = scoreNumEnemy.ToString();
     }
-
     /// <summary>
-    /// 各オブジェクトの初期状態を保存します。
+    /// 現在の合計得点に応じて次のサーブ側を決定します。
+    /// - Inspector の `startingServer` はゲーム開始時の初期サーバーとして扱い、
+    ///   そこから合計得点の "2点ごとのブロック" 数に応じて交代します。
     /// </summary>
-    private void StoreInitialTransforms()
+    public ServeStarter GetServerForNextServe()
     {
-        playerInitialPosition = playerRacket.transform.position;
-        playerInitialRotation = playerRacket.transform.rotation;
+        int totalPoints = scoreNumPlayer + scoreNumEnemy;
+        int twoPointBlocks = totalPoints / 2;
+        bool useInitial = (twoPointBlocks % 2) == 0;
+        if (useInitial) return startingServer;
+        // 反対側を返す
+        return startingServer == ServeStarter.Player ? ServeStarter.Enemy : ServeStarter.Player;
+    }
 
-        enemyInitialPosition = enemyRacket.transform.position;
-        enemyInitialRotation = enemyRacket.transform.rotation;
-
-        ballInitialPosition = ball.transform.position;
-        ballInitialRotation = ball.transform.rotation;
+    public RallyState GetCurrentRallyState()
+    {
+        return currentState;
     }
 }
