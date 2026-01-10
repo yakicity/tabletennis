@@ -4,7 +4,7 @@ public enum EnemyAILevel
 {
     Level1,
     Level2,
-    Level3, 
+    Level3,
     Level4,
     Level5
 }
@@ -26,30 +26,59 @@ public class EnemyRacketController : BaseRacketController
     protected override void Start()
     {
         base.Start(); // BaseRacketControllerのUpdate()を実行
-        switch (aiLevel)
+
+        if (GameData.CpuLevel == 0)
         {
-            case EnemyAILevel.Level1:
-                enemyAI = gameObject.AddComponent<EnemyAILevel1>();
-                break;
-            case EnemyAILevel.Level2:
-                enemyAI = gameObject.AddComponent<EnemyAILevel2>();
-                break;
-            case EnemyAILevel.Level3:
-                enemyAI = gameObject.AddComponent<EnemyAILevel3>();
-                break;
-            case EnemyAILevel.Level4:
-                enemyAI = gameObject.AddComponent<EnemyAILevel4>();
-                break;
-            case EnemyAILevel.Level5:
-                enemyAI = gameObject.AddComponent<EnemyAILevel5>();
-                break;
-            default:
-                Debug.LogError("Unknown AI Level");
-                break;
+            switch (aiLevel)
+            {
+                case EnemyAILevel.Level1:
+                    enemyAI = gameObject.AddComponent<EnemyAILevel1>();
+                    break;
+                case EnemyAILevel.Level2:
+                    enemyAI = gameObject.AddComponent<EnemyAILevel2>();
+                    break;
+                case EnemyAILevel.Level3:
+                    enemyAI = gameObject.AddComponent<EnemyAILevel3>();
+                    break;
+                case EnemyAILevel.Level4:
+                    enemyAI = gameObject.AddComponent<EnemyAILevel4>();
+                    break;
+                case EnemyAILevel.Level5:
+                    enemyAI = gameObject.AddComponent<EnemyAILevel5>();
+                    break;
+                default:
+                    Debug.LogError("Unknown AI Level");
+                    break;
+            }
         }
+        else if (GameData.CpuLevel == 1)
+        {
+            enemyAI = gameObject.AddComponent<EnemyAILevel1>();
+        }
+        else if (GameData.CpuLevel == 2)
+        {
+            enemyAI = gameObject.AddComponent<EnemyAILevel2>();
+        }
+        else if (GameData.CpuLevel == 3)
+        {
+            enemyAI = gameObject.AddComponent<EnemyAILevel3>();
+        }
+        else if (GameData.CpuLevel == 4)
+        {
+            enemyAI = gameObject.AddComponent<EnemyAILevel4>();
+        }
+        else if (GameData.CpuLevel == 5)
+        {
+            enemyAI = gameObject.AddComponent<EnemyAILevel5>();
+        }
+        else
+        {
+            Debug.LogError("Invalid CPU Level in GameData");
+        }
+
         if (enemyAI == null)
             Debug.LogError("EnemyAIBase の取得に失敗しました！");
-        
+
         gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
         if (gameManager == null)
             Debug.LogError("GameManager の取得に失敗しました！");

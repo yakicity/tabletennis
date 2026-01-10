@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/TitleScene.unity
+    guid: f2200d814475f4acc941e7ade944f659
+  - enabled: 1
+    path: Assets/Scenes/rally.unity
+    guid: f5aefbc432bdb4471bbbabc24d377699
+  - enabled: 0
     path: Assets/Scenes/smash.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:

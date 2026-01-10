@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -13,12 +14,20 @@ public class GameManager : MonoBehaviour
     [Header("UI関連")]
     public GameObject scoreTextPlayerObject; // スコアを管理するスクリプト
     public GameObject scoreTextEnemyObject;  // スコアを管理するスクリプト
+    [Header("UI関連 - セット数")]
+    public GameObject setTextPlayerObject;   // プレイヤーのセット数(小)
+    public GameObject setTextEnemyObject;    // 相手のセット数(小)
 
     private TMP_Text scoreTextPlayer; // プレイヤーのスコアを表示するテキスト
     private TMP_Text scoreTextEnemy;  // 相手のスコアを表示するテキスト
+    private TMP_Text setTextPlayer; // プレイヤーのセットスコアを表示するテキスト
+    private TMP_Text setTextEnemy;  // 相手のセットスコアを表示するテキスト
     private int scoreNumPlayer = 0; // スコア変数
     private int scoreNumEnemy = 0; // 相手のスコア変数
-
+    private int setNumPlayer = 0; // プレイヤーの獲得セット数
+    private int setNumEnemy = 0;  // 相手の獲得セット数
+    private int pointsPerSet = 11; // 1セットあたりのポイント数（StartでGameDataから受け取る）
+    private int matchPointSets = 1; // このセット数を取ったら試合終了（StartでGameDataから受け取る）
     // サーブ開始側をインスペクタで選択可能にする
     public enum ServeStarter { Player, Enemy }
     [Header("サーブ開始側")]
@@ -68,8 +77,14 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        matchPointSets = GameData.SetsToWin;
+        pointsPerSet = GameData.PointsPerSet;
+        Debug.Log($"試合設定: {matchPointSets}セット先取、{pointsPerSet}点制で勝利です");
+
         scoreTextPlayer = scoreTextPlayerObject.GetComponent<TMP_Text>();
         scoreTextEnemy = scoreTextEnemyObject.GetComponent<TMP_Text>();
+        setTextPlayer = setTextPlayerObject.GetComponent<TMP_Text>();
+        setTextEnemy = setTextEnemyObject.GetComponent<TMP_Text>();
         UpdateScoreText();
         // 起動時からサーブ位置を反映させる
         // 他コンポーネントの Start が終わるのを待ってからサーブ位置を反映する（NullReference を防ぐ）
@@ -543,6 +558,7 @@ public class GameManager : MonoBehaviour
     private void AwardPointToPlayer()
     {
         scoreNumPlayer++;
+        CheckSetChanged();
         UpdateScoreText();
         Debug.Log("プレイヤーの得点！");
     }
@@ -550,14 +566,65 @@ public class GameManager : MonoBehaviour
     private void AwardPointToEnemy()
     {
         scoreNumEnemy++;
+        CheckSetChanged();
         UpdateScoreText();
         Debug.Log("相手の得点！");
     }
 
+    // 11点先取したかチェックし、セットを更新する処理
+    private void CheckSetChanged()
+    {
+        bool setChanged = false;
+
+        // 11点以上かつ2点差でセット取得
+        if (scoreNumPlayer >= pointsPerSet && (scoreNumPlayer - scoreNumEnemy) >= 2)
+        {
+            setNumPlayer++;
+            setChanged = true;
+        }
+        else if (scoreNumEnemy >= pointsPerSet && (scoreNumEnemy - scoreNumPlayer) >= 2)
+        {
+            setNumEnemy++;
+            setChanged = true;
+        }
+
+        if (setChanged)
+        {
+            // ポイントをリセット
+            scoreNumPlayer = 0;
+            scoreNumEnemy = 0;
+
+            // 変数 matchPointSets と比較する
+            if (setNumPlayer >= matchPointSets || setNumEnemy >= matchPointSets)
+            {
+                Debug.Log($"試合終了！ 勝者: {(setNumPlayer >= matchPointSets ? "Player" : "Enemy")}");
+
+                // 試合終了なので全リセット（またはリザルト画面へ遷移）
+                setNumPlayer = 0;
+                setNumEnemy = 0;
+                startingServer = ServeStarter.Player;
+
+                SceneManager.LoadScene("TitleScene");
+            }
+            else
+            {
+                // まだ試合が続く場合（例: 2セット先取ルールで、今1-0になった場合など）
+                // 次のセットのためにサーブ権を交代
+                if (startingServer == ServeStarter.Player)
+                    startingServer = ServeStarter.Enemy;
+                else
+                    startingServer = ServeStarter.Player;
+
+                Debug.Log("セット終了！ 次のセットへ");
+            }
+        }
+    }
     private void UpdateScoreText()
     {
         scoreTextPlayer.text = scoreNumPlayer.ToString();
         scoreTextEnemy.text = scoreNumEnemy.ToString();
+        setTextPlayer.text = setNumPlayer.ToString();
+        if(setTextEnemy) setTextEnemy.text = setNumEnemy.ToString();
     }
     /// <summary>
     /// 現在の合計得点に応じて次のサーブ側を決定します。
@@ -566,14 +633,34 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public ServeStarter GetServerForNextServe()
     {
-        int totalPoints = scoreNumPlayer + scoreNumEnemy;
-        int twoPointBlocks = totalPoints / 2;
-        bool useInitial = (twoPointBlocks % 2) == 0;
-        if (useInitial) return startingServer;
-        // 反対側を返す
-        return startingServer == ServeStarter.Player ? ServeStarter.Enemy : ServeStarter.Player;
-    }
+        // デュース（両者10点以上）かどうか判定
+        bool isDeuce = (scoreNumPlayer >= pointsPerSet - 1 && scoreNumEnemy >= pointsPerSet - 1);
 
+        if (isDeuce)
+        {
+            // --- デュース時の処理（1本交代） ---
+            // 合計得点が偶数のときは「そのセットの最初のサーバー」
+            // 奇数のときは「もう一方」
+            // 例: 10-10(20点) -> 初期サーバー
+            //     10-11(21点) -> 交代
+            //     11-11(22点) -> 初期サーバー
+            int totalPoints = scoreNumPlayer + scoreNumEnemy;
+            bool isStartingServerTurn = (totalPoints % 2) == 0;
+
+            if (isStartingServerTurn) return startingServer;
+            return startingServer == ServeStarter.Player ? ServeStarter.Enemy : ServeStarter.Player;
+        }
+        else
+        {
+            // --- 通常時の処理（2本交代） ---
+            int totalPoints = scoreNumPlayer + scoreNumEnemy;
+            int twoPointBlocks = totalPoints / 2;
+            bool useInitial = (twoPointBlocks % 2) == 0;
+
+            if (useInitial) return startingServer;
+            return startingServer == ServeStarter.Player ? ServeStarter.Enemy : ServeStarter.Player;
+        }
+    }
     public RallyState GetCurrentRallyState()
     {
         return currentState;
