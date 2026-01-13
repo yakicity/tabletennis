@@ -24,13 +24,10 @@ public class PlayerRacketController : BaseRacketController
     void HandleInput()
     {
         moveInput = Vector3.zero;
-        if (!isBoostCharging) // ため中は完全停止！
-        {
-            if (Input.GetKey(KeyCode.W)) moveInput.x += 1;
-            if (Input.GetKey(KeyCode.S)) moveInput.x -= 1;
-            if (Input.GetKey(KeyCode.A)) moveInput.z += 1;
-            if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
-        }
+        if (Input.GetKey(KeyCode.W)) moveInput.x += 1;
+        if (Input.GetKey(KeyCode.S)) moveInput.x -= 1;
+        if (Input.GetKey(KeyCode.A)) moveInput.z += 1;
+        if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
     }
 
     void UpdateRotationDiscrete()
