@@ -9,6 +9,16 @@ using UnityEngine.Rendering;
 using UnityEngine.UI;
 public class PlayerRacketController : BaseRacketController
 {
+
+    private float verticalSpeedTimer = 0.0f;
+    private float verticalSpeedMin = 1.0f;
+    private float verticalSpeedMax = 4.0f;
+    private float accelerationDuration = 1.0f; // 何秒で最大になるか
+    private float lastPushWTime = 0.0f;
+    private float lastPushSTime = 0.0f;
+    private bool isWkeyHeld = false;
+    private bool isSkeyHeld = false;
+
     // Updateメソッドをオーバーライド（上書き）して、
     // ベースクラスのUpdate処理を呼び出した後に、移動入力処理を行う
     protected override void Update()
@@ -23,14 +33,46 @@ public class PlayerRacketController : BaseRacketController
     /// </summary>
     void HandleInput()
     {
-        moveInput = Vector3.zero;
-        if (!isBoostCharging) // ため中は完全停止！
+        bool up = Input.GetKey(KeyCode.W);
+        bool down = Input.GetKey(KeyCode.S);
+        bool verticalHeld = (isWkeyHeld && up) || (isSkeyHeld && down);
+
+        if (verticalHeld)
         {
-            if (Input.GetKey(KeyCode.W)) moveInput.x += 1;
-            if (Input.GetKey(KeyCode.S)) moveInput.x -= 1;
-            if (Input.GetKey(KeyCode.A)) moveInput.z += 1;
-            if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
+            float now = Time.time;
+            float lastPushTime = up ? lastPushWTime : lastPushSTime;
+            float t = Mathf.Clamp01((now - lastPushTime) / accelerationDuration);
+            verticalSpeed = Mathf.Lerp(verticalSpeedMin, verticalSpeedMax, t);
+            Debug.Log("verticalSpeedTimer: " + verticalSpeedTimer + ", verticalSpeed: " + verticalSpeed+ " t: " + t);
+
+            if (up) moveInput.x += 1;
+            if (down) moveInput.x -= 1;
         }
+        else if(up || down)
+        {
+            if (up)
+            {
+                lastPushWTime = Time.time;
+                isWkeyHeld = true;
+            }
+            else if (down)
+            {
+                lastPushSTime = Time.time;
+                isSkeyHeld = true;
+            }
+        }
+        else
+        {
+            isWkeyHeld = false;
+            isSkeyHeld = false;
+            verticalSpeed = verticalSpeedMin;
+        }
+
+        moveInput = Vector3.zero;
+        if (Input.GetKey(KeyCode.W)) moveInput.x += 0.5f;
+        if (Input.GetKey(KeyCode.S)) moveInput.x -= 0.5f;
+        if (Input.GetKey(KeyCode.A)) moveInput.z += 1;
+        if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
     }
 
     void UpdateRotationDiscrete()

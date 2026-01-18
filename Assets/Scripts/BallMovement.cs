@@ -102,6 +102,10 @@ public class BallMovement : MonoBehaviour
     // ボールの回転・ヒット時の速度補正を計算する
     public (Vector3, Vector3) CalculateBallReturn(GameObject racket, Collision ballCollision)
     {
+        const float verticalVelocityThreshold = 2.0f;
+        const float paramReturnXVelocity = 2.3f;
+        const float verticalVelocityMaxCap = 4.0f;
+
         Vector3 currentSpin = rb.angularVelocity; // 現在のボールのスピン
         Vector3 generatedSpin = CalculateGeneratedSpin(ballCollision, racket); // ラケットによって生成されるスピン
         Vector3 baseReturnVelocity = CalculateVelocityFromRacketFace(racket); // ラケットの傾きによって生成される, ボールの速度ベクトル
@@ -128,6 +132,10 @@ public class BallMovement : MonoBehaviour
 
         // ボールに最終的な速度とスピンを適用
         Vector3 returnVelocity = baseReturnVelocity + hitVelocity + spinEffect;
+
+        // TODO: スマッシュでボールが浮いた時は, X方向を減少させない. 現状は, ボールが浮いたらその分だけX軸方向を減らす. でもそうすると, スマッシュ時に齟齬が生じる. そのため, currentSpinを見て, currentSpinがそんなになかったら飛んでくようにする.
+        if (returnVelocity.y > verticalVelocityThreshold)
+            returnVelocity.x = returnVelocity.x * paramReturnXVelocity / Mathf.Min(returnVelocity.y, verticalVelocityMaxCap);
         isServe = false; // サーブ状態を解除
         return (returnVelocity, finalSpin);
     }
