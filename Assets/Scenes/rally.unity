@@ -340,8 +340,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 722f9cd05418f4afca30d3d6d931404c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boostSlider: {fileID: 1194703915}
-  aiLevel: 3
+  aiLevel: 0
 --- !u!65 &649602940
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -817,7 +816,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 984a0c7e7f869446391d73c8977b204b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boostSlider: {fileID: 1194703915}
 --- !u!1 &1435139447
 GameObject:
   m_ObjectHideFlags: 0

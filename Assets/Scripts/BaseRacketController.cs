@@ -50,6 +50,7 @@ public abstract class BaseRacketController : MonoBehaviour
     protected BallMovement ballMovement; // ボールの軌跡を予測するために用いる
     private LineRenderer lineRenderer; // ボールの軌跡を表示するために用いる
     private float timeScale; // ゲーム内の時間の進む速さ
+    protected float verticalSpeed = 1.0f;
 
     protected virtual void Start()
     {
@@ -78,7 +79,9 @@ public abstract class BaseRacketController : MonoBehaviour
 
     protected virtual void FixedUpdate()
     {
-        rb.linearVelocity = moveInput * moveSpeed;
+        rb.linearVelocity = moveInput * moveSpeed * verticalSpeed;
+        // rb.linearVelocity = moveInput * moveSpeed;
+        Debug.Log($"verticalSpeed: {verticalSpeed}");
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
     }
 
