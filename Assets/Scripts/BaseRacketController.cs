@@ -42,6 +42,13 @@ public abstract class BaseRacketController : MonoBehaviour
     private Vector3 returnDirectionLeft = new Vector3(-0.3f, 0.2f, -0.2f).normalized;
 
     /**
+    * スマッシュ判定・UI関連
+    */
+    protected const float SmashHeightThreshold = 1.32f; // この高さ以上でスマッシュ可能
+    public GameObject smashUIText; // Inspector で「スマッシュ!」テキストを設定
+    public GameManager gameManager; // Inspector で GameManager をアタッチ
+
+    /**
     * その他コンポーネントや Unity の設定
     */
     protected Rigidbody rb; // ラケットの Rigidbody
@@ -81,7 +88,7 @@ public abstract class BaseRacketController : MonoBehaviour
     {
         rb.linearVelocity = moveInput * moveSpeed * verticalSpeed;
         // rb.linearVelocity = moveInput * moveSpeed;
-        Debug.Log($"verticalSpeed: {verticalSpeed}");
+        // Debug.Log($"verticalSpeed: {verticalSpeed}");
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
     }
 
@@ -141,4 +148,5 @@ public abstract class BaseRacketController : MonoBehaviour
         racketFaceIndex[1] = 0;
 
     }
+
 }
