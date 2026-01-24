@@ -9,5 +9,9 @@ public class EnemyAILevel1 : EnemyAIBase
     {
         return 0f;
     }
+    public override float CalculateReturnVelocityZForServe(float hitPositionZ)
+    {
+        return 0f;
+    }
 
 }

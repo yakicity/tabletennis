@@ -417,7 +417,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   smashUIText: {fileID: 789352224}
   gameManager: {fileID: 1220290837}
-  aiLevel: 3
+  aiLevel: 0
 --- !u!65 &649602940
 BoxCollider:
   m_ObjectHideFlags: 0

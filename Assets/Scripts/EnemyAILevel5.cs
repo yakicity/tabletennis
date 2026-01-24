@@ -17,8 +17,15 @@ public class EnemyAILevel5 : EnemyAIBase
         if (Random.Range(0, 2) == 0){
             targetZ = targetZList[0];
         } else {
-            targetZ = targetZList[1];   
+            targetZ = targetZList[1];
         }
+        // float targetZ = -1.95f;
+        float returnZ = calculateReturnZ(targetZ, hitPositionZ);
+        return returnZ;
+    }
+    public override float CalculateReturnVelocityZForServe(float hitPositionZ)
+    {
+        float targetZ = Random.Range(-1.6f, -0.8f);
         // float targetZ = -1.95f;
         float returnZ = calculateReturnZ(targetZ, hitPositionZ);
         return returnZ;

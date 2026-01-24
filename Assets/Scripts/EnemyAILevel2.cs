@@ -14,4 +14,9 @@ public class EnemyAILevel2 : EnemyAIBase
         float deltaZ = TargetZ - hitPositionZ;
         return deltaZ * VelocityScale;
     }
+    public override float CalculateReturnVelocityZForServe(float hitPositionZ)
+    {
+        float deltaZ = TargetZ - hitPositionZ;
+        return deltaZ * VelocityScale;
+    }
 }
