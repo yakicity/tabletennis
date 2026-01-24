@@ -21,6 +21,19 @@ public class PlayerRacketController : BaseRacketController
     // スマッシュ可能状態
     private bool isSmashAvailable = false;
 
+    protected override void Start()
+    {
+        base.Start(); // 親クラス（BaseRacketController）の初期化処理を必ず呼ぶ
+
+        // 移動範囲の制限値を設定
+        // X: 奥行き (手前〜奥)
+        minX = -2.0f; // プレイヤーの後ろ側の限界
+        maxX = 0.65f; // ネット手前の限界
+
+        // Z: 横幅 (左〜右)
+        minZ = -3.0f; // 左側の限界
+        maxZ =  0.8f; // 右側の限界
+    }
     // Updateメソッドをオーバーライド（上書き）して、
     // ベースクラスのUpdate処理を呼び出した後に、移動入力処理を行う
     protected override void Update()
@@ -119,10 +132,12 @@ public class PlayerRacketController : BaseRacketController
         // - ボールが一定の高さ以上
         // - プレイヤーが打つ番（自陣にバウンド後）
         bool ballHighEnough = ball.transform.position.y >= SmashHeightThreshold;
+        // bool ballonTable = ball.transform.position.x > -0.9;
+        bool ballonTable = true;
         bool isPlayerTurn = (currentState == GameManager.RallyState.BouncedOnPlayerCourt ||
                             currentState == GameManager.RallyState.EnemyServeBounceOnPlayerCourt);
 
-        isSmashAvailable = ballHighEnough && isPlayerTurn;
+        isSmashAvailable = ballHighEnough && isPlayerTurn && ballonTable;
 
 
         // スマッシュUI表示切替

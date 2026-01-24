@@ -416,8 +416,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   smashUIText: {fileID: 789352224}
-  gameManager: {fileID: 1220290837}
-  aiLevel: 0
+  aiLevel: 3
 --- !u!65 &649602940
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1079,7 +1078,7 @@ MonoBehaviour:
   scoreTextEnemyObject: {fileID: 1153505703}
   setTextPlayerObject: {fileID: 1629901807}
   setTextEnemyObject: {fileID: 749925720}
-  startingServer: 0
+  currentState: 0
 --- !u!4 &1220290838
 Transform:
   m_ObjectHideFlags: 0
@@ -1176,7 +1175,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   smashUIText: {fileID: 789352224}
-  gameManager: {fileID: 1220290837}
 --- !u!1 &1435139447
 GameObject:
   m_ObjectHideFlags: 0

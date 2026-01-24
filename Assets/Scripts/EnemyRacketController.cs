@@ -13,7 +13,6 @@ public class EnemyRacketController : BaseRacketController
     [SerializeField] private EnemyAILevel aiLevel = EnemyAILevel.Level1;
 
     private EnemyAIBase enemyAI;
-    private GameManager gameManager;
     private bool serveRoutineStarted = false;
     private Vector3 initialPosition;
     private float serveSpeed = -2.0f;
@@ -79,9 +78,6 @@ public class EnemyRacketController : BaseRacketController
         if (enemyAI == null)
             Debug.LogError("EnemyAIBase の取得に失敗しました！");
 
-        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
-        if (gameManager == null)
-            Debug.LogError("GameManager の取得に失敗しました！");
         initialPosition = transform.position;
         originalConstraints = rb.constraints;
         rb.constraints = originalConstraints | RigidbodyConstraints.FreezePositionX;
