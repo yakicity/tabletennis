@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.InputSystem.iOS;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using DG.Tweening;
 public class PlayerRacketController : BaseRacketController
 {
 
@@ -109,6 +110,8 @@ public class PlayerRacketController : BaseRacketController
     void OnCollisionEnter(Collision collision)
     {
         if (!collision.gameObject.CompareTag("Ball")) return;
+        StartHitStop();
+        // ShakeRacket(transform, 90f, 1, 0.2f);
 
         BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
 
@@ -123,6 +126,59 @@ public class PlayerRacketController : BaseRacketController
 
         // ボールに計算結果を適用する
         ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+    }
+
+    public void ShakeRacket(Transform racketTransform, float width, int count, float duration)
+    {
+        Vector3 iniPos = racketTransform.localPosition;
+        Vector3 iniRot = racketTransform.localEulerAngles;
+        var seq = DOTween.Sequence();
+
+        float partDuration = duration / count / 2f;
+        float widthHalf = width / 2f;
+
+        racketTransform.DOLocalMove(new Vector3(iniPos.x + 0.4f, iniPos.y, iniPos.z), 0.1f);
+
+        seq.Append(racketTransform.DOLocalRotate(
+            new Vector3(iniRot.x, iniRot.y - widthHalf, iniRot.z), partDuration));
+        seq.Append(racketTransform.DOLocalRotate(iniRot, partDuration));
+        racketTransform.DOLocalMove(new Vector3(iniPos.x, iniPos.y, iniPos.z), 0.1f);
+    }
+
+    public void StartHitStop()
+    {
+        StartCoroutine(HitStopCoroutine());
+    }
+    // コルーチンの内容
+    private IEnumerator HitStopCoroutine()
+    {
+        // Shake(1.0f, 6, 1.0f);
+        Time.timeScale = 4.0f;
+        yield return new WaitForSecondsRealtime(0.01f);
+        Time.timeScale = 1f;
+
+        // ShakeRacket(transform, 10f, 1, 0.4f);
+        // Shake(1.0f, 6, 1.0f);
+    }
+
+    public void Shake(float width, int count, float duration)
+    {
+        var camera = Camera.main.transform;
+        Vector3 iniPos = camera.localEulerAngles;
+        var seq = DOTween.Sequence();
+        // 振れ演出の片道の揺れ分の時間
+        var partDuration = duration / count / 2f;
+        // 振れ幅の半分の値
+        var widthHalf = width / 2f;
+        // 往復回数-1回分の振動演出を作る
+        for (int i = 0; i < count - 1; i++)
+        {
+            seq.Append(camera.DOLocalRotate(new Vector3(iniPos.x -widthHalf, iniPos.y, iniPos.z), partDuration));
+            seq.Append(camera.DOLocalRotate(new Vector3(iniPos.x + widthHalf, iniPos.y, iniPos.z), partDuration));
+        }
+        // 最後の揺れは元の角度に戻す工程とする
+        seq.Append(camera.DOLocalRotate(new Vector3(iniPos.x - widthHalf, iniPos.y, iniPos.z), partDuration));
+        seq.Append(camera.DOLocalRotate(iniPos, partDuration));
     }
 
 }
