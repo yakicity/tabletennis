@@ -42,6 +42,13 @@ public abstract class BaseRacketController : MonoBehaviour
     private Vector3 returnDirectionLeft = new Vector3(-0.3f, 0.2f, -0.2f).normalized;
 
     /**
+    * スマッシュ判定・UI関連
+    */
+    protected const float SmashHeightThreshold = 1.32f; // この高さ以上でスマッシュ可能
+    public GameObject smashUIText; // Inspector で「スマッシュ!」テキストを設定
+    protected GameManager gameManager; // Inspector で GameManager をアタッチ
+
+    /**
     * その他コンポーネントや Unity の設定
     */
     protected Rigidbody rb; // ラケットの Rigidbody
@@ -52,8 +59,21 @@ public abstract class BaseRacketController : MonoBehaviour
     private float timeScale; // ゲーム内の時間の進む速さ
     protected float verticalSpeed = 1.0f;
 
+    /**
+    * ラケットの移動範囲制限
+    * PlayerRacketの継承先で書き換えて使う。enemyはFixedUpdateではClampPositionを呼ばず、独自のルールで動くため、EnemyRacketの継承先では設定しない。
+    */
+    protected float minX = 0f;
+    protected float maxX = 0f;
+    protected float minZ = 0f;
+    protected float maxZ = 0f;
+
     protected virtual void Start()
     {
+        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+        if (gameManager == null)
+            Debug.LogError("GameManager の取得に失敗しました！");
+
         // 各種コンポーネントや Unity上の設定を取得
         rb = GetComponent<Rigidbody>();
         ball = GameObject.Find("Ball");
@@ -83,6 +103,19 @@ public abstract class BaseRacketController : MonoBehaviour
         // rb.linearVelocity = moveInput * moveSpeed;
         // Debug.Log($"verticalSpeed: {verticalSpeed}");
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
+        ClampPosition(); // ラケットの移動範囲を制限
+    }
+
+    protected void ClampPosition()
+    {
+        Vector3 currentPos = rb.position;
+        float clampedX = Mathf.Clamp(currentPos.x, minX, maxX);
+        float clampedZ = Mathf.Clamp(currentPos.z, minZ, maxZ);
+
+        if (currentPos.x != clampedX || currentPos.z != clampedZ)
+        {
+            rb.position = new Vector3(clampedX, currentPos.y, clampedZ);
+        }
     }
 
     public int[] GetAngleIndices()
@@ -141,4 +174,5 @@ public abstract class BaseRacketController : MonoBehaviour
         racketFaceIndex[1] = 0;
 
     }
+
 }

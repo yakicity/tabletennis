@@ -13,7 +13,6 @@ public class EnemyRacketController : BaseRacketController
     [SerializeField] private EnemyAILevel aiLevel = EnemyAILevel.Level1;
 
     private EnemyAIBase enemyAI;
-    private GameManager gameManager;
     private bool serveRoutineStarted = false;
     private Vector3 initialPosition;
     private float serveSpeed = -2.0f;
@@ -82,9 +81,6 @@ public class EnemyRacketController : BaseRacketController
         if (enemyAI == null)
             Debug.LogError("EnemyAIBase の取得に失敗しました！");
 
-        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
-        if (gameManager == null)
-            Debug.LogError("GameManager の取得に失敗しました！");
         initialPosition = transform.position;
         originalConstraints = rb.constraints;
         rb.constraints = originalConstraints | RigidbodyConstraints.FreezePositionX;
@@ -147,14 +143,30 @@ public class EnemyRacketController : BaseRacketController
 
         // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
         var returnData = ballMovement.CalculateBallReturn(gameObject, collision, xSpeed);
+        Vector3 returnVelocity;
 
-        // 返球速度
-        Vector3 returnVelocity = new()
+        if (gameManager.currentState == GameManager.RallyState.BeforeServe && gameManager.GetServerForNextServe() == GameManager.ServeStarter.Enemy)
         {
-            x = returnData.Item1.x * -1,
-            y = returnData.Item1.y,
-            z = enemyAI.CalculateReturnVelocityZ(rb.transform.position.z)
-        };
+            // 敵のサーブ返球時の特別な処理（必要ならここに追加）
+            // 返球速度
+            returnVelocity = new()
+            {
+                x = returnData.Item1.x * -1,
+                y = returnData.Item1.y,
+                z = enemyAI.CalculateReturnVelocityZForServe(rb.transform.position.z)
+            };
+        }
+        else
+        {
+            // 通常のラリー中の返球処理（必要ならここに追加）
+            // 返球速度
+            returnVelocity = new()
+            {
+                x = returnData.Item1.x * -1,
+                y = returnData.Item1.y,
+                z = enemyAI.CalculateReturnVelocityZ(rb.transform.position.z)
+            };
+        }
 
         // 返球するボールの回転速度
         Vector3 returnAnglarVelocity = returnData.Item2;
@@ -168,6 +180,7 @@ public class EnemyRacketController : BaseRacketController
 
     private IEnumerator EnemyServeAfterDelay()
     {
+        Debug.Log("Enemy Serve Coroutine Started");
         yield return new WaitForSeconds(serveWaitTime);
         rb.constraints = originalConstraints;
 

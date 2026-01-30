@@ -31,7 +31,7 @@ public class GameManager : MonoBehaviour
     // サーブ開始側をインスペクタで選択可能にする
     public enum ServeStarter { Player, Enemy }
     [Header("サーブ開始側")]
-    public ServeStarter startingServer = ServeStarter.Player;
+    private ServeStarter startingServer = ServeStarter.Player;
 
     // サーブ時の固定座標（定数扱い）
     private static readonly Vector3 PlayerServe_PlayerPos = new Vector3(-1.4f, 1.04f, -1.123f);
@@ -62,7 +62,7 @@ public class GameManager : MonoBehaviour
         EnemyServeBounceOnEnemyCourt,   // 敵サーブが相手コートで1バウンド後
         EnemyServeBounceOnPlayerCourt, // 敵サーブがプレイヤーコートで1バウンド後
     }
-    private RallyState currentState = RallyState.BeforeServe; // 現在の状態
+    public RallyState currentState = RallyState.BeforeServe; // 現在の状態
 
     // --- 状態管理 ---
     public enum LastHitter { None, Player, Enemy } // publicにしてBallMovementからアクセス可能に

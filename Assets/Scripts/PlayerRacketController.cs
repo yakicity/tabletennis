@@ -19,7 +19,22 @@ public class PlayerRacketController : BaseRacketController
     private float lastPushSTime = 0.0f;
     private bool isWkeyHeld = false;
     private bool isSkeyHeld = false;
+    // スマッシュ可能状態
+    private bool isSmashAvailable = false;
 
+    protected override void Start()
+    {
+        base.Start(); // 親クラス（BaseRacketController）の初期化処理を必ず呼ぶ
+
+        // 移動範囲の制限値を設定
+        // X: 奥行き (手前〜奥)
+        minX = -2.0f; // プレイヤーの後ろ側の限界
+        maxX = 0.65f; // ネット手前の限界
+
+        // Z: 横幅 (左〜右)
+        minZ = -3.0f; // 左側の限界
+        maxZ =  0.8f; // 右側の限界
+    }
     // Updateメソッドをオーバーライド（上書き）して、
     // ベースクラスのUpdate処理を呼び出した後に、移動入力処理を行う
     protected override void Update()
@@ -27,6 +42,7 @@ public class PlayerRacketController : BaseRacketController
         base.Update(); // BaseRacketControllerのUpdate()を実行
         UpdateRotationDiscrete(); // ラケットの向きを離散的に更新
         HandleInput(); // このクラス固有の移動入力処理を実行
+        UpdateSmashUI(); // スマッシュUI更新
     }
 
     /// <summary>
@@ -106,6 +122,31 @@ public class PlayerRacketController : BaseRacketController
         // 4. 計算されたオイラー角から最終的なQuaternionを生成して返す
         return Quaternion.Euler(targetEulerAngles);
     }
+    /// <summary>
+    /// ボールの高さに応じてスマッシュUIを表示/非表示
+    /// </summary>
+    private void UpdateSmashUI()
+    {
+        if (ball == null) return;
+        GameManager.RallyState currentState = gameManager.GetCurrentRallyState();
+        // スマッシュ可能な状態か判定
+        // - ボールが一定の高さ以上
+        // - プレイヤーが打つ番（自陣にバウンド後）
+        bool ballHighEnough = ball.transform.position.y >= SmashHeightThreshold;
+        // bool ballonTable = ball.transform.position.x > -0.9;
+        bool ballonTable = true;
+        bool isPlayerTurn = (currentState == GameManager.RallyState.BouncedOnPlayerCourt ||
+                            currentState == GameManager.RallyState.EnemyServeBounceOnPlayerCourt);
+
+        isSmashAvailable = ballHighEnough && isPlayerTurn && ballonTable;
+
+
+        // スマッシュUI表示切替
+        if (smashUIText != null)
+        {
+            smashUIText.SetActive(isSmashAvailable);
+        }
+    }
 
     void OnCollisionEnter(Collision collision)
     {
@@ -114,18 +155,35 @@ public class PlayerRacketController : BaseRacketController
         // ShakeRacket(transform, 90f, 1, 0.2f);
 
         BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
-
+        // スマッシュ判定: ボールが高い位置 + Wキーが押されている
+        bool isSmash = isSmashAvailable && Input.GetKey(KeyCode.W);
         // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
         var returnData = ballMovement.CalculateBallReturn(gameObject, collision);
 
-        // 返球速度
-        Vector3 returnVelocity = returnData.Item1;
+        if (isSmash)
+        {
+            // スマッシュ返球（高速・低弾道）
+            Debug.Log("スマッシュ!");
+            // 現在のボール位置
+            Vector3 hitPosition = collision.gameObject.transform.position;
+            // スマッシュ速度を計算（直線的にターゲットへ）
+            Vector3 returnVelocity = ballMovement.CalculateSmashVelocity(hitPosition, racketFaceIndex[1]);
+            // 返球するボールの回転速度
+            Vector3 returnAnglarVelocity = returnData.Item2;
+            Debug.Log($"Smash Return Velocity: {returnVelocity}");
+            ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
 
-        // 返球するボールの回転速度
-        Vector3 returnAnglarVelocity = returnData.Item2;
-
-        // ボールに計算結果を適用する
-        ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+        }
+        else
+        {
+            // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
+            // 返球速度
+            Vector3 returnVelocity = returnData.Item1;
+            Debug.Log($"Player Return Velocity: {returnVelocity}");
+            // 返球するボールの回転速度
+            Vector3 returnAnglarVelocity = returnData.Item2;
+            ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+        }
     }
 
     public void ShakeRacket(Transform racketTransform, float width, int count, float duration)

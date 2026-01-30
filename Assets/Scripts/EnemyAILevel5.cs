@@ -32,6 +32,13 @@ public class EnemyAILevel5 : EnemyAIBase
         float returnZ = calculateReturnZ(targetZ, hitPositionZ);
         return returnZ;
     }
+    public override float CalculateReturnVelocityZForServe(float hitPositionZ)
+    {
+        float targetZ = Random.Range(-1.6f, -0.8f);
+        // float targetZ = -1.95f;
+        float returnZ = calculateReturnZ(targetZ, hitPositionZ);
+        return returnZ;
+    }
 
     private float calculateReturnZ(float target, float hitPositionZ){
         float VelocityScale = 1.6f;

@@ -6,4 +6,5 @@ public abstract class EnemyAIBase : MonoBehaviour
     public abstract void AdjustRacketBeforeReturn(GameObject racket,  GameObject ball);
 
     public abstract float CalculateReturnVelocityZ(float hitPositionZ);
+    public abstract float CalculateReturnVelocityZForServe(float hitPositionZ);
 }
