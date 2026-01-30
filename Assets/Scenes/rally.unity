@@ -419,6 +419,7 @@ MonoBehaviour:
   aiLevel: 3
   isAdjust: 0
   smashUIText: {fileID: 789352224}
+--- !u!65 &649602940
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
