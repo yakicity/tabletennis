@@ -36,6 +36,15 @@ public class BallMovement : MonoBehaviour
     private bool isServe = true; // サーブ中かどうか
     // 左右の傾き1段階あたりに加算されるオフセット
     private Vector3 rollVelocityOffsetPerLevel = new(0.0f, 0.0f, -0.5f);
+    /**
+    * スマッシュ時のパラメータ
+    */
+    private const float SmashTargetX = 1.8f;           // スマッシュのターゲットX座標（相手コートの奥）
+    private const float SmashTargetY = 0.85f;          // スマッシュのターゲットY座標（台の高さ付近）
+    private const float SmashVelocityScaleX = 2.4f;    // X方向（前後）の速度スケール
+    private const float SmashVelocityY = 0.5f;         // Y方向（上下）の固定速度
+    private const float SmashVelocityScaleZ = 1.0f;    // Z方向（左右）の速度スケール
+    private const float SmashTargetZOffsetPerLevel = 1.0f; // ラケット傾き1段階あたりのZ座標オフセット
 
     /**
     * ボールの軌道を予測するために用いるパラメータや変数
@@ -123,7 +132,7 @@ public class BallMovement : MonoBehaviour
         {
             finalSpin = generatedSpin + currentSpin;
             spinEffect = CalculateSpinEffect(ballCollision, finalSpin);
-            Debug.Log($"finalSpin: {finalSpin}, spinEffect: {spinEffect}");
+            // Debug.Log($"finalSpin: {finalSpin}, spinEffect: {spinEffect}");
         }
 
         // ラケットの速さと傾きによる速度補正を計算する
@@ -321,6 +330,61 @@ public class BallMovement : MonoBehaviour
     private bool HasCrossedTargetX(float currentX, float nextX, float targetX)
     {
         return (currentX - targetX) * (nextX - targetX) <= 0f;
+    }
+
+
+    /// <summary>
+    /// スマッシュ時の返球速度を計算する（直線的にターゲットへ向かう）
+    /// </summary>
+    /// <param name="hitPosition">ボールの現在位置</param>
+    /// <param name="racketRollIndex">ラケットの左右傾きインデックス（-2〜2）</param>
+    /// <returns>返球速度ベクトル</returns>
+    public Vector3 CalculateSmashVelocity(Vector3 hitPosition, int racketRollIndex)
+    {
+        float targetZ = CalculateSmashTargetZ(hitPosition, racketRollIndex);
+
+        // 各軸の速度を計算
+        float velocityX = CalculateReturnSmashVelocityX(SmashTargetX, hitPosition.x);
+        float velocityY = CalculateReturnSmashVelocityY(SmashTargetY, hitPosition.y);
+        float velocityZ = CalculateReturnSmashVelocityZ(targetZ, hitPosition.z);
+        Debug.Log($"Smash Velocity: ({velocityX}, {velocityY}, {velocityZ})");
+        return new Vector3(velocityX, velocityY, velocityZ);
+    }
+
+    /// <summary>
+    /// ラケットの傾きに応じたスマッシュのターゲットZ座標を取得
+    /// </summary>
+    private float CalculateSmashTargetZ(Vector3 hitPosition, int racketRollIndex)
+    {
+        // 基本は現在のZ座標、ラケット傾きで左右に調整
+        float baseZ = hitPosition.z;
+        return baseZ - racketRollIndex * SmashTargetZOffsetPerLevel;
+    }
+
+    /// <summary>
+    /// X方向（前後）のスマッシュ速度を計算
+    /// </summary>
+    private float CalculateReturnSmashVelocityX(float targetX, float hitPositionX)
+    {
+        float deltaX = targetX - hitPositionX;
+        return deltaX * SmashVelocityScaleX;
+    }
+
+    /// <summary>
+    /// Y方向（上下）のスマッシュ速度を計算
+    /// </summary>
+    private float CalculateReturnSmashVelocityY(float targetY, float hitPositionY)
+    {
+        return SmashVelocityY;
+    }
+
+    /// <summary>
+    /// Z方向（左右）のスマッシュ速度を計算
+    /// </summary>
+    private float CalculateReturnSmashVelocityZ(float targetZ, float hitPositionZ)
+    {
+        float deltaZ = targetZ - hitPositionZ;
+        return deltaZ * SmashVelocityScaleZ;
     }
 
     void OnCollisionEnter(Collision collision)
