@@ -19,13 +19,16 @@ public class EnemyRacketController : BaseRacketController
     private float serveSpeed = -2.0f;
     private float serveMove = 0.3f;
     private float serveWaitTime = 3.0f;
+    private float restoreWaitTime = 0.2f;
     private RigidbodyConstraints originalConstraints;
-
+    public bool isAdjust = false;
+    private Vector3 originalEulerAngles;
 
 
     protected override void Start()
     {
         base.Start(); // BaseRacketControllerのUpdate()を実行
+        originalEulerAngles = gameObject.transform.eulerAngles;
 
         if (GameData.CpuLevel == 0)
         {
@@ -107,6 +110,12 @@ public class EnemyRacketController : BaseRacketController
         {
             serveRoutineStarted = false;
         }
+
+        if (!isAdjust){
+            GameObject ball = GameObject.Find("Ball");
+            enemyAI.AdjustRacketBeforeReturn(gameObject, ball);
+        }
+
     }
 
     // baseクラスのものは、味方のラケット用のAdjustPositionToBallである。オーバーライドする必要がある。
@@ -134,11 +143,10 @@ public class EnemyRacketController : BaseRacketController
 
         BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
 
-        // 敵CPUがラケットの傾きや速度を調整する傾きや速度を調整する
-        enemyAI.AdjustRacketBeforeReturn(gameObject, rb);
+        float xSpeed = enemyAI.enemyRacketSpeed;
 
         // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
-        var returnData = ballMovement.CalculateBallReturn(gameObject, collision);
+        var returnData = ballMovement.CalculateBallReturn(gameObject, collision, xSpeed);
 
         // 返球速度
         Vector3 returnVelocity = new()
@@ -154,6 +162,8 @@ public class EnemyRacketController : BaseRacketController
 
         // ボールに計算結果を適用する
         ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+        StartCoroutine(EnemyAngleRestoreAfterDelay());
+        isAdjust = false;
     }
 
     private IEnumerator EnemyServeAfterDelay()
@@ -171,5 +181,10 @@ public class EnemyRacketController : BaseRacketController
         rb.MovePosition(GameManager.PlayerServe_EnemyPos);
         rb.linearVelocity = Vector3.zero;
         rb.constraints = originalConstraints | RigidbodyConstraints.FreezePositionX;
+    }
+    private IEnumerator EnemyAngleRestoreAfterDelay()
+    {
+        yield return new WaitForSeconds(restoreWaitTime);
+        gameObject.transform.eulerAngles = originalEulerAngles;
     }
 }

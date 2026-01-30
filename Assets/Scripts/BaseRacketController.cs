@@ -22,7 +22,7 @@ public abstract class BaseRacketController : MonoBehaviour
     /**
     * ラケットの傾きに関するパラメータや変数
     */
-    protected Vector3 baseRotationVector = new Vector3(-90f, -90f, 180f); // 通常時の基本角度
+    public Vector3 baseRotationVector = new Vector3(-90f, -90f, 180f); // 通常時の基本角度
     protected float drivePitchAngle = -15f; // ドライブは基本から-10度
     protected float cutPitchAngle = 20f;   // カットは基本から+20度
     protected float rollAnglePerLevel = 20f; // 1段階あたり20度傾く
@@ -81,7 +81,7 @@ public abstract class BaseRacketController : MonoBehaviour
     {
         rb.linearVelocity = moveInput * moveSpeed * verticalSpeed;
         // rb.linearVelocity = moveInput * moveSpeed;
-        Debug.Log($"verticalSpeed: {verticalSpeed}");
+        // Debug.Log($"verticalSpeed: {verticalSpeed}");
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
     }
 

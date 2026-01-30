@@ -44,7 +44,7 @@ public class PlayerRacketController : BaseRacketController
             float lastPushTime = up ? lastPushWTime : lastPushSTime;
             float t = Mathf.Clamp01((now - lastPushTime) / accelerationDuration);
             verticalSpeed = Mathf.Lerp(verticalSpeedMin, verticalSpeedMax, t);
-            Debug.Log("verticalSpeedTimer: " + verticalSpeedTimer + ", verticalSpeed: " + verticalSpeed+ " t: " + t);
+            // Debug.Log("verticalSpeedTimer: " + verticalSpeedTimer + ", verticalSpeed: " + verticalSpeed+ " t: " + t);
 
             if (up) moveInput.x += 1;
             if (down) moveInput.x -= 1;

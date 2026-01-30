@@ -28,7 +28,7 @@ public class BallMovement : MonoBehaviour
     private const float TuningVelocityX = 0.5f;
     private const float TuningVelocityY = 1.0f;
     private const float TuningSpinEffect = 0.1f;
-    private const float TunignAngle = 1.0f; // ラケット傾きによる飛距離補正
+    private const float TuningAngle = 1.0f; // ラケット傾きによる飛距離補正
     private const float RacketMinSpeed = 2.0f; // ラケットの最低限の速さ
     private const float SpinDecreaseRate = 0.8f;
     private Vector3 baseReturnVelocity = new(4.0f, 2.0f, 0.0f);
@@ -52,6 +52,10 @@ public class BallMovement : MonoBehaviour
 
     [Header("ゲーム管理")]
     public GameManager gameManager; // GameManagerへの参照
+
+    private const string playerObjectName = "PlayerBat";
+    private string playerTag;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -65,6 +69,12 @@ public class BallMovement : MonoBehaviour
         // ボールのすり抜け対策
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+        playerTag = GameObject.FindWithTag(playerObjectName).tag;
+        if (playerTag == null)
+        {
+            Debug.LogError("PlayerBatタグのついたオブジェクトが見つかりません。");
+        }
     }
 
     void FixedUpdate()
@@ -100,15 +110,16 @@ public class BallMovement : MonoBehaviour
     }
 
     // ボールの回転・ヒット時の速度補正を計算する
-    public (Vector3, Vector3) CalculateBallReturn(GameObject racket, Collision ballCollision)
+    public (Vector3, Vector3) CalculateBallReturn(GameObject racket, Collision ballCollision, float xSpeed = 0f)
     {
         const float verticalVelocityThreshold = 2.0f;
         const float paramReturnXVelocity = 2.3f;
         const float verticalVelocityMaxCap = 4.0f;
 
         Vector3 currentSpin = rb.angularVelocity; // 現在のボールのスピン
-        Vector3 generatedSpin = CalculateGeneratedSpin(ballCollision, racket); // ラケットによって生成されるスピン
+        Vector3 generatedSpin = CalculateGeneratedSpin(ballCollision, racket, xSpeed); // ラケットによって生成されるスピン
         Vector3 baseReturnVelocity = CalculateVelocityFromRacketFace(racket); // ラケットの傾きによって生成される, ボールの速度ベクトル
+        Debug.Log("currentSpin: " + currentSpin + ", generatedSpin: " + generatedSpin);
 
         Vector3 finalSpin; // 最終的なスピン
         Vector3 spinEffect = Vector3.zero;
@@ -123,7 +134,7 @@ public class BallMovement : MonoBehaviour
         {
             finalSpin = generatedSpin + currentSpin;
             spinEffect = CalculateSpinEffect(ballCollision, finalSpin);
-            Debug.Log($"finalSpin: {finalSpin}, spinEffect: {spinEffect}");
+            // Debug.Log($"finalSpin: {finalSpin}, spinEffect: {spinEffect}");
         }
 
         // ラケットの速さと傾きによる速度補正を計算する
@@ -137,22 +148,23 @@ public class BallMovement : MonoBehaviour
         if (returnVelocity.y > verticalVelocityThreshold)
             returnVelocity.x = returnVelocity.x * paramReturnXVelocity / Mathf.Min(returnVelocity.y, verticalVelocityMaxCap);
         isServe = false; // サーブ状態を解除
+        Debug.Log($"returnVelocity: {returnVelocity}, finalSpin: {finalSpin}");
         return (returnVelocity, finalSpin);
     }
 
     // ラケットの傾きと動かす速さによって生成される, 回転速度を計算する
-    Vector3 CalculateGeneratedSpin(Collision ballCollision, GameObject racket)
+    Vector3 CalculateGeneratedSpin(Collision ballCollision, GameObject racket, float xSpeed = 0f)
     {
         Vector3 normal = ballCollision.contacts[0].normal;
         Rigidbody racketRb = racket.GetComponent<Rigidbody>();
-        Vector3 racketVelocity = racketRb.linearVelocity;
+        Vector3 racketVelocity = racket.CompareTag(playerTag) ? racketRb.linearVelocity : new Vector3(xSpeed, 0f, 0f);
 
         // ラケットの接線成分 (擦っている方向)
         Vector3 tangentialVel = Vector3.ProjectOnPlane(racketVelocity, normal);
         // 回転軸（スピン方向） = 接線 × 法線
         Vector3 spinDir = Vector3.Cross(tangentialVel, normal).normalized;
         // 回転の強さ = 接線速度の大きさ × スピン係数
-        float spinAmount = tangentialVel.magnitude * RubberPower;
+        float spinAmount = tangentialVel.magnitude * RubberPower * Mathf.Abs(racketVelocity.x);
         // 回転をZ軸 (上下回転)にだけ反映
         return new Vector3(rb.angularVelocity.x, rb.angularVelocity.y, spinDir.z * spinAmount);
     }
@@ -165,7 +177,7 @@ public class BallMovement : MonoBehaviour
         if (racketController == null)
         {
             Debug.LogWarning("衝突オブジェクトにRacketControllerが見つかりません。");
-            Debug.Log($"{(isServe ? baseServeVelocity : baseReturnVelocity)}: Returning base velocity.");
+            // Debug.Log($"{(isServe ? baseServeVelocity : baseReturnVelocity)}: Returning base velocity.");
             return isServe ? baseServeVelocity : baseReturnVelocity;
         }
         // 1. ラケットから現在の状態インデックスを取得
@@ -254,15 +266,18 @@ public class BallMovement : MonoBehaviour
         Vector3 spinDir = Vector3.Cross(spin, normal).normalized;
         // 回転量の大きさ
         float spinMagnitude = spin.magnitude;
+        float isPlayerHitBall = rb.linearVelocity.x > 0 ? -1f : 1f;
         // 実際に適用するベクトル(y方向のみ適用)
-        return new Vector3(0f, spinDir.y * spinMagnitude * TuningSpinEffect, 0f);
+        return new Vector3(0f, isPlayerHitBall * spinDir.y * spinMagnitude * TuningSpinEffect, 0f);
     }
     Vector3 CalculateHitVelocity(GameObject racket)
     {
         Rigidbody racketRb = racket.GetComponent<Rigidbody>();
 
         // Y方向速度 (ラケットの角度から決定)
-        float angleFactor = racket.transform.forward.x * TunignAngle; // -1~1の範囲。ラケットが上向きだと-1に近づき, ラケットが下向きだと1に近づく
+        float racketForwardX = racket.CompareTag(playerTag) ? racket.transform.forward.x : -racket.transform.forward.x;
+        float angleFactor = racketForwardX * TuningAngle; // -1~1の範囲。ラケットが上向きだと-1に近づき, ラケットが下向きだと1に近づく
+        Debug.Log("transform.forward.x: " + racket.transform.forward.x);
         float velocityY = -angleFactor * TuningVelocityY; // ラケットが上向だと上方向に飛び, 下向きだとした方向に飛ぶ
 
         // X方向速度 (ラケットの傾きと速度から決定)
@@ -367,7 +382,7 @@ public class BallMovement : MonoBehaviour
         //     rb.angularVelocity = Vector3.zero;
         //     rb.useGravity = false;
         // }
-// 【重要】Rigidbodyがある場合は、transformではなくrb.positionに代入する
+        // 【重要】Rigidbodyがある場合は、transformではなくrb.positionに代入する
         // これにより物理エンジン側に「強制ワープ」であることを即座に伝えます
         if (rb != null)
         {

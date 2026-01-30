@@ -3,23 +3,32 @@ using UnityEngine;
 public class EnemyAILevel5 : EnemyAIBase
 {
     private float TargetZ = -1.23f; // 台中央のz座標
-    public override float enemyRacketSpeed => 1.5f;
+    public override float enemyRacketSpeed => Random.Range(1.5f, 2.0f);
 
-
-    public override void AdjustRacketBeforeReturn(GameObject racket, Rigidbody racketRb)
+    public override void AdjustRacketBeforeReturn(GameObject racket,  GameObject ball)
     {
-        // level2 では AI はラケットの速さや角度を変更しない
+        Rigidbody ballRb = ball.GetComponent<Rigidbody>();
+
+        if (ballRb.linearVelocity.x < 0 || ball.transform.position.x < 0.5)
+            return;
+
+        Vector3 baseRacketEulerAngles = racket.transform.eulerAngles;
+        if (ballRb.angularVelocity.z < 0){
+            baseRacketEulerAngles.x -= 20.0f;
+            racket.transform.eulerAngles = baseRacketEulerAngles;
+        } 
+        else if (ballRb.angularVelocity.z > 0){
+            baseRacketEulerAngles.x += 20.0f;
+            racket.transform.eulerAngles = baseRacketEulerAngles;
+        } 
+        EnemyRacketController enemyRacketController = racket.GetComponent<EnemyRacketController>();
+        enemyRacketController.isAdjust = true;
     }
     public override float CalculateReturnVelocityZ(float hitPositionZ)
     {
         float targetZ;
         float[] targetZList = {-1.95f, -0.45f};
-        if (Random.Range(0, 2) == 0){
-            targetZ = targetZList[0];
-        } else {
-            targetZ = targetZList[1];   
-        }
-        // float targetZ = -1.95f;
+        targetZ = Random.Range(0, 2) == 0 ? targetZList[0] : targetZList[1];
         float returnZ = calculateReturnZ(targetZ, hitPositionZ);
         return returnZ;
     }
