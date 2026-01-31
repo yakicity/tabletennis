@@ -9,7 +9,7 @@ public class EnemyAILevel3 : EnemyAIBase
     {
         // level3 では AI はラケットの速さや角度を変更しない
     }
-    public override float CalculateReturnVelocityZ(float hitPositionZ)
+    public override float CalculateReturnVelocityZ(float hitPositionZ, float ballPositionY)
     {
         float deltaZ = TargetZ - hitPositionZ;
         return deltaZ * VelocityScale;

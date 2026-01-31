@@ -11,14 +11,9 @@ public enum EnemyAILevel
 public class EnemyRacketController : BaseRacketController
 {
     [SerializeField] private EnemyAILevel aiLevel = EnemyAILevel.Level1;
-
     private EnemyAIBase enemyAI;
     private bool serveRoutineStarted = false;
     private Vector3 initialPosition;
-    private float serveSpeed = -2.0f;
-    private float serveMove = 0.3f;
-    private float serveWaitTime = 3.0f;
-    private float restoreWaitTime = 0.2f;
     private RigidbodyConstraints originalConstraints;
     public bool isAdjust = false;
     private Vector3 originalEulerAngles;
@@ -121,7 +116,7 @@ public class EnemyRacketController : BaseRacketController
             return;
 
         Vector3 pos = transform.position;
-        float speed = enemyAI.enemyRacketSpeed;
+        float speed = enemyAI.EnemyRacketSpeed;
         pos.z = Mathf.MoveTowards(pos.z, ball.transform.position.z, speed * Time.fixedDeltaTime);
 
         float? predictedY = ballMovement.SimulateUntilX(ball.transform.position, ballRb.linearVelocity, targetX);
@@ -139,7 +134,7 @@ public class EnemyRacketController : BaseRacketController
 
         BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
 
-        float xSpeed = enemyAI.enemyRacketSpeed;
+        float xSpeed = enemyAI.EnemyRacketSpeed;
 
         // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
         var returnData = ballMovement.CalculateBallReturn(gameObject, collision, xSpeed);
@@ -164,7 +159,7 @@ public class EnemyRacketController : BaseRacketController
             {
                 x = returnData.Item1.x * -1,
                 y = returnData.Item1.y,
-                z = enemyAI.CalculateReturnVelocityZ(rb.transform.position.z)
+                z = enemyAI.CalculateReturnVelocityZ(rb.transform.position.z, ball.transform.position.y)
             };
         }
 
@@ -180,6 +175,10 @@ public class EnemyRacketController : BaseRacketController
 
     private IEnumerator EnemyServeAfterDelay()
     {
+        float serveSpeed = -2.0f;
+        float serveMove = 0.3f;
+        float serveWaitTime = 3.0f;
+
         Debug.Log("Enemy Serve Coroutine Started");
         yield return new WaitForSeconds(serveWaitTime);
         rb.constraints = originalConstraints;
@@ -197,6 +196,7 @@ public class EnemyRacketController : BaseRacketController
     }
     private IEnumerator EnemyAngleRestoreAfterDelay()
     {
+        float restoreWaitTime = 0.2f;
         yield return new WaitForSeconds(restoreWaitTime);
         gameObject.transform.eulerAngles = originalEulerAngles;
     }

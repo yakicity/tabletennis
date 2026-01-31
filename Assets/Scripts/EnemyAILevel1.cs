@@ -6,7 +6,7 @@ public class EnemyAILevel1 : EnemyAIBase
         // level1 では AI はラケットの速さや角度を変更しない
     }
     
-    public override float CalculateReturnVelocityZ(float hitPositionZ)
+    public override float CalculateReturnVelocityZ(float hitPositionZ, float ballPositionY)
     {
         return 0f;
     }

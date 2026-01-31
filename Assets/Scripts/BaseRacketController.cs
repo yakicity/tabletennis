@@ -6,17 +6,9 @@ using UnityEngine.UI;
 public abstract class BaseRacketController : MonoBehaviour
 {
     /**
-    * どれくらい長押しされたかをゲージで可視化するために用いる
-    */
-
-    /**
     * ラケットの前後の動きに関するパラメータやいや移動のための変数
     */
     protected float moveSpeed = 2.0f; // ラケットの移動速度
-    private const float MinMoveSpeed = 2.0f; // ラケットが威力を溜めた時の最小のスピード
-    private const float MaxMoveSpeed = 4.0f; // ラケットが威力を溜めた時の最大のスピード
-    private const float MaxChargeTime = 0.5f; // 0.5秒ためたら maxSpeed になる
-    private const float RacketMoveDistance = 0.2f; // ラケットが威力を溜めた後に移動する距離
     protected Vector3 moveInput = Vector3.zero; // ラケットが動く速さ. 継承先クラスの入力によって変化する
 
     /**
@@ -93,15 +85,11 @@ public abstract class BaseRacketController : MonoBehaviour
 
     protected virtual void Update()
     {
-        // UpdateRotationDiscrete(); // ラケットの向きを離散的に更新
-        // HandleInput(); // 移動入力の受付は継承先クラスで行う
     }
 
     protected virtual void FixedUpdate()
     {
         rb.linearVelocity = moveInput * moveSpeed * verticalSpeed;
-        // rb.linearVelocity = moveInput * moveSpeed;
-        // Debug.Log($"verticalSpeed: {verticalSpeed}");
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
         ClampPosition(); // ラケットの移動範囲を制限
     }

@@ -11,7 +11,6 @@ using DG.Tweening;
 public class PlayerRacketController : BaseRacketController
 {
 
-    private float verticalSpeedTimer = 0.0f;
     private float verticalSpeedMin = 1.0f;
     private float verticalSpeedMax = 4.0f;
     private float accelerationDuration = 1.0f; // 何秒で最大になるか
@@ -150,9 +149,9 @@ public class PlayerRacketController : BaseRacketController
 
     void OnCollisionEnter(Collision collision)
     {
+        Vector3 returnVelocity;
+        Vector3 returnAnglarVelocity;
         if (!collision.gameObject.CompareTag("Ball")) return;
-        StartHitStop();
-        // ShakeRacket(transform, 90f, 1, 0.2f);
 
         BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
         // スマッシュ判定: ボールが高い位置 + Wキーが押されている
@@ -167,23 +166,23 @@ public class PlayerRacketController : BaseRacketController
             // 現在のボール位置
             Vector3 hitPosition = collision.gameObject.transform.position;
             // スマッシュ速度を計算（直線的にターゲットへ）
-            Vector3 returnVelocity = ballMovement.CalculateSmashVelocity(hitPosition, racketFaceIndex[1]);
+            returnVelocity = ballMovement.CalculateSmashVelocity(hitPosition, racketFaceIndex[1]);
             // 返球するボールの回転速度
-            Vector3 returnAnglarVelocity = returnData.Item2;
             Debug.Log($"Smash Return Velocity: {returnVelocity}");
-            ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
 
         }
         else
         {
             // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
             // 返球速度
-            Vector3 returnVelocity = returnData.Item1;
+            returnVelocity = returnData.Item1;
             Debug.Log($"Player Return Velocity: {returnVelocity}");
             // 返球するボールの回転速度
-            Vector3 returnAnglarVelocity = returnData.Item2;
-            ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
         }
+        returnAnglarVelocity = returnData.Item2;
+        ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+
+        StartHitStop(); // ヒットストップ開始
     }
 
     public void ShakeRacket(Transform racketTransform, float width, int count, float duration)
@@ -210,33 +209,8 @@ public class PlayerRacketController : BaseRacketController
     // コルーチンの内容
     private IEnumerator HitStopCoroutine()
     {
-        // Shake(1.0f, 6, 1.0f);
-        Time.timeScale = 4.0f;
-        yield return new WaitForSecondsRealtime(0.01f);
+        Time.timeScale = 0.0f;
+        yield return new WaitForSecondsRealtime(0.02f);
         Time.timeScale = 1f;
-
-        // ShakeRacket(transform, 10f, 1, 0.4f);
-        // Shake(1.0f, 6, 1.0f);
     }
-
-    public void Shake(float width, int count, float duration)
-    {
-        var camera = Camera.main.transform;
-        Vector3 iniPos = camera.localEulerAngles;
-        var seq = DOTween.Sequence();
-        // 振れ演出の片道の揺れ分の時間
-        var partDuration = duration / count / 2f;
-        // 振れ幅の半分の値
-        var widthHalf = width / 2f;
-        // 往復回数-1回分の振動演出を作る
-        for (int i = 0; i < count - 1; i++)
-        {
-            seq.Append(camera.DOLocalRotate(new Vector3(iniPos.x -widthHalf, iniPos.y, iniPos.z), partDuration));
-            seq.Append(camera.DOLocalRotate(new Vector3(iniPos.x + widthHalf, iniPos.y, iniPos.z), partDuration));
-        }
-        // 最後の揺れは元の角度に戻す工程とする
-        seq.Append(camera.DOLocalRotate(new Vector3(iniPos.x - widthHalf, iniPos.y, iniPos.z), partDuration));
-        seq.Append(camera.DOLocalRotate(iniPos, partDuration));
-    }
-
 }
