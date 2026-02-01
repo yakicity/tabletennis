@@ -11,20 +11,18 @@ public enum EnemyAILevel
 public class EnemyRacketController : BaseRacketController
 {
     [SerializeField] private EnemyAILevel aiLevel = EnemyAILevel.Level1;
-
     private EnemyAIBase enemyAI;
     private bool serveRoutineStarted = false;
     private Vector3 initialPosition;
-    private float serveSpeed = -2.0f;
-    private float serveMove = 0.3f;
-    private float serveWaitTime = 3.0f;
     private RigidbodyConstraints originalConstraints;
-
+    public bool isAdjust = false;
+    private Vector3 originalEulerAngles;
 
 
     protected override void Start()
     {
         base.Start(); // BaseRacketControllerのUpdate()を実行
+        originalEulerAngles = gameObject.transform.eulerAngles;
 
         if (GameData.CpuLevel == 0)
         {
@@ -103,6 +101,12 @@ public class EnemyRacketController : BaseRacketController
         {
             serveRoutineStarted = false;
         }
+
+        if (!isAdjust){
+            GameObject ball = GameObject.Find("Ball");
+            enemyAI.AdjustRacketBeforeReturn(gameObject, ball);
+        }
+
     }
 
     // baseクラスのものは、味方のラケット用のAdjustPositionToBallである。オーバーライドする必要がある。
@@ -112,7 +116,7 @@ public class EnemyRacketController : BaseRacketController
             return;
 
         Vector3 pos = transform.position;
-        float speed = enemyAI.enemyRacketSpeed;
+        float speed = enemyAI.EnemyRacketSpeed;
         pos.z = Mathf.MoveTowards(pos.z, ball.transform.position.z, speed * Time.fixedDeltaTime);
 
         float? predictedY = ballMovement.SimulateUntilX(ball.transform.position, ballRb.linearVelocity, targetX);
@@ -130,11 +134,10 @@ public class EnemyRacketController : BaseRacketController
 
         BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
 
-        // 敵CPUがラケットの傾きや速度を調整する傾きや速度を調整する
-        enemyAI.AdjustRacketBeforeReturn(gameObject, rb);
+        float xSpeed = enemyAI.EnemyRacketSpeed;
 
         // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
-        var returnData = ballMovement.CalculateBallReturn(gameObject, collision);
+        var returnData = ballMovement.CalculateBallReturn(gameObject, collision, xSpeed);
         Vector3 returnVelocity;
 
         if (gameManager.currentState == GameManager.RallyState.BeforeServe && gameManager.GetServerForNextServe() == GameManager.ServeStarter.Enemy)
@@ -156,7 +159,7 @@ public class EnemyRacketController : BaseRacketController
             {
                 x = returnData.Item1.x * -1,
                 y = returnData.Item1.y,
-                z = enemyAI.CalculateReturnVelocityZ(rb.transform.position.z)
+                z = enemyAI.CalculateReturnVelocityZ(rb.transform.position.z, ball.transform.position.y)
             };
         }
 
@@ -166,10 +169,16 @@ public class EnemyRacketController : BaseRacketController
 
         // ボールに計算結果を適用する
         ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+        StartCoroutine(EnemyAngleRestoreAfterDelay());
+        isAdjust = false;
     }
 
     private IEnumerator EnemyServeAfterDelay()
     {
+        float serveSpeed = -2.0f;
+        float serveMove = 0.3f;
+        float serveWaitTime = 3.0f;
+
         Debug.Log("Enemy Serve Coroutine Started");
         yield return new WaitForSeconds(serveWaitTime);
         rb.constraints = originalConstraints;
@@ -184,5 +193,11 @@ public class EnemyRacketController : BaseRacketController
         rb.MovePosition(GameManager.PlayerServe_EnemyPos);
         rb.linearVelocity = Vector3.zero;
         rb.constraints = originalConstraints | RigidbodyConstraints.FreezePositionX;
+    }
+    private IEnumerator EnemyAngleRestoreAfterDelay()
+    {
+        float restoreWaitTime = 0.2f;
+        yield return new WaitForSeconds(restoreWaitTime);
+        gameObject.transform.eulerAngles = originalEulerAngles;
     }
 }

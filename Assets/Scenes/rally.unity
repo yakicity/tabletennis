@@ -415,8 +415,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 722f9cd05418f4afca30d3d6d931404c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  baseRotationVector: {x: -90, y: -90, z: 180}
   smashUIText: {fileID: 789352224}
-  aiLevel: 3
+  aiLevel: 4
+  isAdjust: 0
 --- !u!65 &649602940
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -831,6 +833,50 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1 &1120663179
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1120663181}
+  - component: {fileID: 1120663180}
+  m_Layer: 0
+  m_Name: HitStopManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1120663180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1120663179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d77276aa595384b5bb6e0954414fb1db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1120663181
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1120663179}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.5699921, y: 1.6627674, z: -1.7548249}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1153505703
 GameObject:
   m_ObjectHideFlags: 0
@@ -1174,6 +1220,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 984a0c7e7f869446391d73c8977b204b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  baseRotationVector: {x: -90, y: -90, z: 180}
   smashUIText: {fileID: 789352224}
 --- !u!1 &1435139447
 GameObject:
@@ -2179,7 +2226,7 @@ Transform:
   m_GameObject: {fileID: 1676782949}
   serializedVersion: 2
   m_LocalRotation: {x: 0.30441728, y: 0.63822424, z: -0.30441728, w: 0.63822424}
-  m_LocalPosition: {x: -1.71, y: 2.8, z: -1.464}
+  m_LocalPosition: {x: -1.71, y: 3, z: -1.464}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2571,3 +2618,4 @@ SceneRoots:
   - {fileID: 2078477497}
   - {fileID: 497790628}
   - {fileID: 1220290838}
+  - {fileID: 1120663181}

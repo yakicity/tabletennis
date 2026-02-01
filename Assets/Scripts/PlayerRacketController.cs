@@ -7,10 +7,10 @@ using UnityEngine;
 using UnityEngine.InputSystem.iOS;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using DG.Tweening;
 public class PlayerRacketController : BaseRacketController
 {
 
-    private float verticalSpeedTimer = 0.0f;
     private float verticalSpeedMin = 1.0f;
     private float verticalSpeedMax = 4.0f;
     private float accelerationDuration = 1.0f; // 何秒で最大になるか
@@ -149,6 +149,8 @@ public class PlayerRacketController : BaseRacketController
 
     void OnCollisionEnter(Collision collision)
     {
+        Vector3 returnVelocity;
+        Vector3 returnAnglarVelocity;
         if (!collision.gameObject.CompareTag("Ball")) return;
 
         BallMovement ballMovement = collision.gameObject.GetComponent<BallMovement>();
@@ -164,23 +166,51 @@ public class PlayerRacketController : BaseRacketController
             // 現在のボール位置
             Vector3 hitPosition = collision.gameObject.transform.position;
             // スマッシュ速度を計算（直線的にターゲットへ）
-            Vector3 returnVelocity = ballMovement.CalculateSmashVelocity(hitPosition, racketFaceIndex[1]);
+            returnVelocity = ballMovement.CalculateSmashVelocity(hitPosition, racketFaceIndex[1]);
             // 返球するボールの回転速度
-            Vector3 returnAnglarVelocity = returnData.Item2;
             Debug.Log($"Smash Return Velocity: {returnVelocity}");
-            ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
 
         }
         else
         {
             // ラケットの傾きや速さ, 現在のボールの速さや回転から, 返球速度やボールの回転速度を計算する
             // 返球速度
-            Vector3 returnVelocity = returnData.Item1;
+            returnVelocity = returnData.Item1;
             Debug.Log($"Player Return Velocity: {returnVelocity}");
             // 返球するボールの回転速度
-            Vector3 returnAnglarVelocity = returnData.Item2;
-            ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
         }
+        returnAnglarVelocity = returnData.Item2;
+        ballMovement.ApplyReturn(returnVelocity, returnAnglarVelocity);
+
+        StartHitStop(); // ヒットストップ開始
     }
 
+    public void ShakeRacket(Transform racketTransform, float width, int count, float duration)
+    {
+        Vector3 iniPos = racketTransform.localPosition;
+        Vector3 iniRot = racketTransform.localEulerAngles;
+        var seq = DOTween.Sequence();
+
+        float partDuration = duration / count / 2f;
+        float widthHalf = width / 2f;
+
+        racketTransform.DOLocalMove(new Vector3(iniPos.x + 0.4f, iniPos.y, iniPos.z), 0.1f);
+
+        seq.Append(racketTransform.DOLocalRotate(
+            new Vector3(iniRot.x, iniRot.y - widthHalf, iniRot.z), partDuration));
+        seq.Append(racketTransform.DOLocalRotate(iniRot, partDuration));
+        racketTransform.DOLocalMove(new Vector3(iniPos.x, iniPos.y, iniPos.z), 0.1f);
+    }
+
+    public void StartHitStop()
+    {
+        StartCoroutine(HitStopCoroutine());
+    }
+    // コルーチンの内容
+    private IEnumerator HitStopCoroutine()
+    {
+        Time.timeScale = 0.0f;
+        yield return new WaitForSecondsRealtime(0.02f);
+        Time.timeScale = 1f;
+    }
 }
