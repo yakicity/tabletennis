@@ -63,6 +63,7 @@ public class GameManager : MonoBehaviour
         EnemyServeBounceOnPlayerCourt, // 敵サーブがプレイヤーコートで1バウンド後
     }
     public RallyState currentState = RallyState.BeforeServe; // 現在の状態
+    private bool serveNetInFlag = false; // サーブがネットインしたかどうかのフラグ
 
     // --- 状態管理 ---
     public enum LastHitter { None, Player, Enemy } // publicにしてBallMovementからアクセス可能に
@@ -72,6 +73,8 @@ public class GameManager : MonoBehaviour
     private Vector3 lastBouncePosition; // 最後にバウンドした位置
     private const float MIN_BOUNCE_DISTANCE_SQR = 0.01f; // 2回目バウンドとして判定するための最低距離(の2乗)。0.1f * 0.1f
     private bool isRallyFinished = false; // ラリーが終了したかどうか
+    private int rallyFinishedDelayCounter = 0; // ラリー終了後の遅延カウンター
+    private const int RallyFinishedDelayFrames = 100; // 何フレーム待つか
 
 
 
@@ -97,74 +100,85 @@ public class GameManager : MonoBehaviour
     }
     void Update()
     {
-        UpdateScoreText(); // スコアテキストを更新
         if (ball == null) return;
 
-        // ボールがアウトになった場合（床に落ちた）
-        if (ball.transform.position.y < 0f)
-        {
-            // 状態に応じて得点者を判断
-            switch (currentState)
-            {
-                case RallyState.BeforeServe:
-                    // サーブ前にアウトなら何も起こらない
-                    Debug.Log("サーブ前にアウト");
-                    break;
-                case RallyState.PlayerServeJustHit: // プレイヤーがサーブを撃った直後にアウト
-                    Debug.Log("プレイヤーのサーブがアウト");
-                    AwardPointToEnemy();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.PlayerServeBounceOnPlayerCourt: // プレイヤーサーブがプレイヤーコートでバウンド後、アウト
-                    Debug.Log("プレイヤーのサーブが相手コートに到達せずアウト");
-                    AwardPointToEnemy();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.PlayerServeBounceOnEnemyCourt: // プレイヤーサーブが相手コートでバウンド後、アウト
-                    Debug.Log("相手がサーブを返せずアウト");
-                    AwardPointToPlayer();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.EnemyJustHit: // 相手が打ってアウト
-                    Debug.Log("相手が打ってアウト");
-                    AwardPointToPlayer();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.BouncedOnPlayerCourt: // プレイヤーコートでバウンド後、プレイヤーが返せずアウト
-                    Debug.Log("プレイヤーが返せずアウト");
-                    AwardPointToEnemy();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.PlayerJustHit: // プレイヤーが打ってアウト
-                    Debug.Log("プレイヤーが打ってアウト");
-                    AwardPointToEnemy();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.BouncedOnEnemyCourt: // 相手コートでバウンド後、相手が返せずアウト
-                    Debug.Log("相手が返せずアウト");
-                    AwardPointToPlayer();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.EnemyServeJustHit: // 相手がサーブを撃った直後にアウト
-                    Debug.Log("相手のサーブがアウト");
-                    AwardPointToPlayer();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.EnemyServeBounceOnEnemyCourt: // 相手サーブが相手コートでバウンド後、アウト
-                    Debug.Log("相手のサーブがプレイヤーコートに到達せずアウト");
-                    AwardPointToPlayer();
-                    isRallyFinished = true;
-                    break;
-                case RallyState.EnemyServeBounceOnPlayerCourt: // 相手サーブがプレイヤーコートでバウンド後、アウト
-                    Debug.Log("プレイヤーがサーブを返せずアウト");
-                    AwardPointToEnemy();
-                    isRallyFinished = true;
-                    break;
-            }
-        }
+        // ラリー終了時はgamemanegerのUpdateで一定フレーム待ってからサーブモードに入る
         if (isRallyFinished)
         {
-            EnterServeMode(); // ラリーが終了したらサーブモードに戻す
+            rallyFinishedDelayCounter++;
+            if (rallyFinishedDelayCounter >= RallyFinishedDelayFrames)
+            {
+                EnterServeMode();
+                rallyFinishedDelayCounter = 0; // カウンターをリセット
+            }
+        }
+        else
+        {
+            UpdateScoreText(); // スコアテキストを更新
+            rallyFinishedDelayCounter = 0; // カウンターをリセット
+
+            // ボールがアウトになった場合（床に落ちた）
+            if (ball.transform.position.y < 0f)
+            {
+                // 状態に応じて得点者を判断
+                switch (currentState)
+                {
+                    case RallyState.BeforeServe:
+                        // サーブ前にアウトなら何も起こらない
+                        Debug.Log("サーブ前にアウト");
+                        break;
+                    case RallyState.PlayerServeJustHit: // プレイヤーがサーブを撃った直後にアウト
+                        Debug.Log("プレイヤーのサーブがアウト");
+                        AwardPointToEnemy();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.PlayerServeBounceOnPlayerCourt: // プレイヤーサーブがプレイヤーコートでバウンド後、アウト
+                        Debug.Log("プレイヤーのサーブが相手コートに到達せずアウト");
+                        AwardPointToEnemy();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.PlayerServeBounceOnEnemyCourt: // プレイヤーサーブが相手コートでバウンド後、アウト
+                        Debug.Log("相手がサーブを返せずアウト");
+                        AwardPointToPlayer();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.EnemyJustHit: // 相手が打ってアウト
+                        Debug.Log("相手が打ってアウト");
+                        AwardPointToPlayer();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.BouncedOnPlayerCourt: // プレイヤーコートでバウンド後、プレイヤーが返せずアウト
+                        Debug.Log("プレイヤーが返せずアウト");
+                        AwardPointToEnemy();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.PlayerJustHit: // プレイヤーが打ってアウト
+                        Debug.Log("プレイヤーが打ってアウト");
+                        AwardPointToEnemy();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.BouncedOnEnemyCourt: // 相手コートでバウンド後、相手が返せずアウト
+                        Debug.Log("相手が返せずアウト");
+                        AwardPointToPlayer();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.EnemyServeJustHit: // 相手がサーブを撃った直後にアウト
+                        Debug.Log("相手のサーブがアウト");
+                        AwardPointToPlayer();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.EnemyServeBounceOnEnemyCourt: // 相手サーブが相手コートでバウンド後、アウト
+                        Debug.Log("相手のサーブがプレイヤーコートに到達せずアウト");
+                        AwardPointToPlayer();
+                        isRallyFinished = true;
+                        break;
+                    case RallyState.EnemyServeBounceOnPlayerCourt: // 相手サーブがプレイヤーコートでバウンド後、アウト
+                        Debug.Log("プレイヤーがサーブを返せずアウト");
+                        AwardPointToEnemy();
+                        isRallyFinished = true;
+                        break;
+                }
+            }
         }
     }
 
@@ -172,6 +186,7 @@ public class GameManager : MonoBehaviour
 
     public void OnRacketHit(bool wasHitByPlayer)
     {
+        if (isRallyFinished) return; // ラリー終了後は無視
         switch (currentState)
         {
             case RallyState.BeforeServe:
@@ -319,6 +334,7 @@ public class GameManager : MonoBehaviour
     // ボールから呼び出される公開メソッド
     public void OnCourtBounce(Vector3 bouncePosition)
     {
+        if (isRallyFinished) return; // ラリー終了後は無視
         bool isPlayerSide = bouncePosition.x < 0.543;
         bool isEnemySide = bouncePosition.x > 0.651;
 
@@ -329,16 +345,18 @@ public class GameManager : MonoBehaviour
                 {
                     AwardPointToEnemy();
                     isRallyFinished = true;
-                    Debug.Log("自分が打ったサーブが直接自分コートに");
+                    Debug.Log("自分が打ったサーブが相手コートに");
                 }
                 else if (isPlayerSide)
                 {
+                    Debug.Log("プレイヤーのサーブがプレイヤーコートに");
                     lastBouncePosition = bouncePosition;
                     currentState = RallyState.PlayerServeBounceOnPlayerCourt; // 正規の1バウンド
                 }
                 else
                 {
-                    Debug.Log("プレイヤーが打ったサーブがネットに");
+                    Debug.Log("プレイヤーが打ったサーブが直接ネットに");
+                    AwardPointToEnemy();
                     isRallyFinished = true;
                 }
                 break;
@@ -353,13 +371,22 @@ public class GameManager : MonoBehaviour
                 }
                 else if (isEnemySide)
                 {
-                    lastBouncePosition = bouncePosition;
-                    currentState = RallyState.PlayerServeBounceOnEnemyCourt; // 正規の1バウンド
+                    if (serveNetInFlag)
+                    {
+                        Debug.Log("プレイヤーのサーブがネットインして相手コートに");
+                        serveNetInFlag = false;
+                        isRallyFinished = true;
+                    }
+                    else
+                    {
+                        lastBouncePosition = bouncePosition;
+                        currentState = RallyState.PlayerServeBounceOnEnemyCourt; // 正規の1バウンド
+                    }
                 }
                 else
                 {
                     Debug.Log("プレイヤーが打ったサーブがネットに");
-                    isRallyFinished = true;
+                    serveNetInFlag = true;
                 }
                 break;
             case RallyState.PlayerServeBounceOnEnemyCourt:
@@ -468,7 +495,8 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log("相手が打ったサーブがネットに");
+                    Debug.Log("相手が打ったサーブが直接ネットに");
+                    AwardPointToPlayer();
                     isRallyFinished = true;
                 }
                 break;
@@ -482,14 +510,21 @@ public class GameManager : MonoBehaviour
                     Debug.Log("2バウンド目: 相手のサーブが相手コートでバウンド-----");
                 }
                 else if (isPlayerSide)
-                {
-                    lastBouncePosition = bouncePosition;
-                    currentState = RallyState.EnemyServeBounceOnPlayerCourt; // 正規の1バウンド
-                }
+                    if (serveNetInFlag)
+                    {
+                        Debug.Log("相手のサーブがネットインして相手コートに");
+                        serveNetInFlag = false;
+                        isRallyFinished = true;
+                    }
+                    else
+                    {
+                        lastBouncePosition = bouncePosition;
+                        currentState = RallyState.EnemyServeBounceOnPlayerCourt; // 正規の1バウンド
+                    }
                 else
                 {
                     Debug.Log("相手が打ったサーブがネットに");
-                    isRallyFinished = true;
+                    serveNetInFlag = true;
                 }
                 break;
             case RallyState.EnemyServeBounceOnPlayerCourt:
