@@ -90,19 +90,21 @@ public abstract class BaseRacketController : MonoBehaviour
     protected virtual void FixedUpdate()
     {
         rb.linearVelocity = moveInput * moveSpeed * verticalSpeed;
-        if (Vector3.Distance(transform.position, ball.transform.position) < 1f)
-        {
-            AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
-        }
-        else
-        {
-            Vector3 pos = transform.position;
-            pos.y = 1.04f;
-            transform.position = pos;
-            CalcUpdateLineRender(transform.position.x);
-        }
-
+        AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
         ClampPosition(); // ラケットの移動範囲を制限
+        // if (Vector3.Distance(transform.position, ball.transform.position) < 1f)
+        // {
+        //     AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
+        // }
+        // else
+        // {
+        //     Vector3 pos = transform.position;
+        //     pos.y = 1.04f;
+        //     transform.position = pos;
+        //     CalcUpdateLineRender(transform.position.x);
+        // }
+
+        // ClampPosition(); // ラケットの移動範囲を制限
     }
 
     protected void ClampPosition()
