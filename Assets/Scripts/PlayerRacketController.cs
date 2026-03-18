@@ -89,6 +89,10 @@ public class PlayerRacketController : BaseRacketController
         if (Input.GetKey(KeyCode.S)) moveInput.x -= 0.5f;
         if (Input.GetKey(KeyCode.A)) moveInput.z += 1;
         if (Input.GetKey(KeyCode.D)) moveInput.z -= 1;
+        if (moveInput != Vector3.zero)
+        {
+            moveInput.Normalize();
+        }
     }
 
     void UpdateRotationDiscrete()
