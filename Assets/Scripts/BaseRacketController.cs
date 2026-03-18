@@ -52,8 +52,8 @@ public abstract class BaseRacketController : MonoBehaviour
     protected float verticalSpeed = 1.0f;
 
     [Header("ラケットとボール衝突時の減速設定")]
-    [Range(0f, 1f)] [SerializeField] protected float racketHitSpeedDamping = 0.4f;
-    [SerializeField] protected float decelerationDuration = 0.1f; // 減速が継続される時間（秒）
+    [Range(0f, 1f)] [SerializeField] protected float racketHitSpeedDamping = 1.0f;
+    [SerializeField] protected float decelerationDuration = 0.01f; // 減速が継続される時間（秒）
 
     private bool isDecelerating = false; // 減速中フラグ
     private float decelerationTimer = 0f; // 減速経過時間
