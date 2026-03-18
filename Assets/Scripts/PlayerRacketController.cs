@@ -49,6 +49,16 @@ public class PlayerRacketController : BaseRacketController
     /// </summary>
     void HandleInput()
     {
+        // 減速中は入力を受け付けない
+        if (IsDecelerating)
+        {
+            moveInput = Vector3.zero;
+            verticalSpeed = verticalSpeedMin;
+            isWkeyHeld = false;
+            isSkeyHeld = false;
+            return;
+        }
+
         bool up = Input.GetKey(KeyCode.W);
         bool down = Input.GetKey(KeyCode.S);
         bool verticalHeld = (isWkeyHeld && up) || (isSkeyHeld && down);

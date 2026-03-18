@@ -159,7 +159,7 @@ public class BallMovement : MonoBehaviour
     // ラケットの傾きと動かす速さによって生成される, 回転速度を計算する
     Vector3 CalculateGeneratedSpin(Collision ballCollision, GameObject racket, float xSpeed = 0f)
     {
-        const float rubberPower = 20f; // ラバーによる回転量の増加率
+        const float rubberPower = 3f; // ラバーによる回転量の増加率
         Vector3 normal = ballCollision.contacts[0].normal;
         Rigidbody racketRb = racket.GetComponent<Rigidbody>();
         Vector3 racketVelocity = racket.CompareTag(playerTag) ? racketRb.linearVelocity : new Vector3(xSpeed, 0f, 0f);
@@ -345,6 +345,14 @@ public class BallMovement : MonoBehaviour
     {
         // ラケットがボールに触れたら重力を付与
         rb.useGravity = true;
+
+        // ラケットに当たった場合は、BaseRacketControllerのイベント関数を呼び出して
+        // ボールとラケットの速度を減速させる
+        BaseRacketController racketController = collision.gameObject.GetComponent<BaseRacketController>();
+        if (racketController != null)
+        {
+            racketController.TriggerBallCollisionDecelerate(rb);
+        }
 
         // ▼▼▼ 衝突相手のタグに応じてGameManagerに通知 ▼▼▼
 

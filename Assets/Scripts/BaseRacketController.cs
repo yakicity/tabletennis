@@ -51,6 +51,16 @@ public abstract class BaseRacketController : MonoBehaviour
     private float timeScale; // ゲーム内の時間の進む速さ
     protected float verticalSpeed = 1.0f;
 
+    [Header("ラケットとボール衝突時の減速設定")]
+    [Range(0f, 1f)] [SerializeField] protected float racketHitSpeedDamping = 0.4f;
+    [SerializeField] protected float decelerationDuration = 0.1f; // 減速が継続される時間（秒）
+
+    private bool isDecelerating = false; // 減速中フラグ
+    private float decelerationTimer = 0f; // 減速経過時間
+
+    protected bool IsDecelerating => isDecelerating; // 子クラスから読み取り専用でアクセス可能
+    public event System.Action<Rigidbody, Rigidbody> OnBallCollisionDecelerate;
+
     /**
     * ラケットの移動範囲制限
     * PlayerRacketの継承先で書き換えて使う。enemyはFixedUpdateではClampPositionを呼ばず、独自のルールで動くため、EnemyRacketの継承先では設定しない。
@@ -81,6 +91,13 @@ public abstract class BaseRacketController : MonoBehaviour
         // 右左の向きのインデックス
         racketFaceIndex[0] = 0; // 通常のラケットの向き
         racketFaceIndex[1] = 0; // 通常のラケットの向き
+
+        OnBallCollisionDecelerate += ApplyCollisionDeceleration;
+    }
+
+    protected virtual void OnDestroy()
+    {
+        OnBallCollisionDecelerate -= ApplyCollisionDeceleration;
     }
 
     protected virtual void Update()
@@ -89,22 +106,27 @@ public abstract class BaseRacketController : MonoBehaviour
 
     protected virtual void FixedUpdate()
     {
-        rb.linearVelocity = moveInput * moveSpeed * verticalSpeed;
+        // 減速中は入力を無視し、速度を減速し続ける
+        if (isDecelerating)
+        {
+            decelerationTimer += Time.fixedDeltaTime;
+            rb.linearVelocity *= racketHitSpeedDamping;
+            rb.angularVelocity *= racketHitSpeedDamping;
+
+            // 減速時間が終了したら解除
+            if (decelerationTimer >= decelerationDuration)
+            {
+                isDecelerating = false;
+                moveInput = Vector3.zero; // キー入力をリセット
+            }
+        }
+        else
+        {
+            rb.linearVelocity = moveInput * moveSpeed * verticalSpeed;
+        }
+
         AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
         ClampPosition(); // ラケットの移動範囲を制限
-        // if (Vector3.Distance(transform.position, ball.transform.position) < 1f)
-        // {
-        //     AdjustPositionToBall(transform.position.x); // ラケットの位置をボールに合わせる
-        // }
-        // else
-        // {
-        //     Vector3 pos = transform.position;
-        //     pos.y = 1.04f;
-        //     transform.position = pos;
-        //     CalcUpdateLineRender(transform.position.x);
-        // }
-
-        // ClampPosition(); // ラケットの移動範囲を制限
     }
 
     protected void ClampPosition()
@@ -184,6 +206,29 @@ public abstract class BaseRacketController : MonoBehaviour
         racketFaceIndex[0] = 0;
         racketFaceIndex[1] = 0;
 
+    }
+
+    /// <summary>
+    /// ボール衝突時の減速イベントを発火する
+    /// </summary>
+    public void TriggerBallCollisionDecelerate(Rigidbody ballRigidbody)
+    {
+        if (rb == null || ballRigidbody == null) return;
+        OnBallCollisionDecelerate?.Invoke(rb, ballRigidbody);
+    }
+
+    /// <summary>
+    /// ラケットの速度を減速させるデフォルト処理
+    /// </summary>
+    protected virtual void ApplyCollisionDeceleration(Rigidbody racketRigidbody, Rigidbody ballRigidbody)
+    {
+        // 減速フラグをONにして、指定時間減速を継続
+        isDecelerating = true;
+        decelerationTimer = 0f;
+
+        // 衝突時の初期減速
+        racketRigidbody.linearVelocity *= racketHitSpeedDamping;
+        racketRigidbody.angularVelocity *= racketHitSpeedDamping;
     }
 
 }
