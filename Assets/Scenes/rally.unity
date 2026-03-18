@@ -525,7 +525,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseRotationVector: {x: -90, y: -90, z: 180}
   smashUIText: {fileID: 789352224}
-  aiLevel: 3
+  aiLevel: 0
   isAdjust: 0
 --- !u!65 &649602940
 BoxCollider:

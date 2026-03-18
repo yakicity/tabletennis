@@ -109,13 +109,11 @@ public class GameManager : MonoBehaviour
             if (rallyFinishedDelayCounter >= RallyFinishedDelayFrames)
             {
                 EnterServeMode();
-                rallyFinishedDelayCounter = 0; // カウンターをリセット
             }
         }
         else
         {
             UpdateScoreText(); // スコアテキストを更新
-            rallyFinishedDelayCounter = 0; // カウンターをリセット
 
             // ボールがアウトになった場合（床に落ちた）
             if (ball.transform.position.y < 0f)
@@ -589,6 +587,9 @@ public class GameManager : MonoBehaviour
         // 状態をリセット
         currentState = RallyState.BeforeServe;
         isRallyFinished = false;
+
+        rallyFinishedDelayCounter = 0;
+        serveNetInFlag = false;
     }
     private void AwardPointToPlayer()
     {
